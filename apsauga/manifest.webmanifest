@@ -1,0 +1,22 @@
+{
+  "name": "Apsauga – sukčių tikrinimas",
+  "short_name": "Apsauga",
+  "description": "Patikrinkite SMS, nuorodą, banko sąskaitą ar paskyrą ir atpažinkite sukčius.",
+  "lang": "lt",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF3F5",
+  "theme_color": "#1F4E6B",
+  "icons": [
+    { "src": "extension/icons/icon192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "extension/icons/icon512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "extension/icons/icon512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "extension/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  }
+}
