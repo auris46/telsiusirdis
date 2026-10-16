@@ -177,7 +177,7 @@
     },
     {
       id: 'investment', w: 40, re: [
-        /investuok|investicij(os|ų) (galimyb|platform|pasiūlym)|garantuot(as|ą|a) (pelnas|pelną|grąža)|pelnas (kasdien|per dien|per savait)|uždirbk|uzdirbk|uždirbti nuo namų|pasyvi(ų|as) pajam/i,
+        /investuok|investicij(os|ų) (galimyb|platform|pasiūlym)|garantuot(as|ą|a) (pelnas|pelną|grąža)|pelnas.{0,15}(kasdien|per dien|per savait|per mėn)|uždirbk|uzdirbk|uždirbti nuo namų|pasyvi(ų|as) pajam/i,
         /guaranteed (return|profit|income)|investment opportunity|double your (money|bitcoin|crypto)|trading (platform|signals|bot)|earn \$?\d+.{0,15}(per|a) (day|week)|passive income/i,
         /инвестиц|гарантированн(ый|ая) (доход|прибыль)|zarabiaj|inwestycj|gwarantowany zysk|garantierte rendite/i
       ]
@@ -227,12 +227,137 @@
         /mano brangioji|mano meile|mylimoji|nemokamas bilietas.{0,20}(atvykti|lėktuv)|kariuomenėj tarnaujantis|naftos platform/i,
         /my (dear|love|darling)\b.{0,60}(money|ticket|customs|fee|hospital)|stationed (in|abroad)|oil rig|peacekeeping mission/i
       ]
+    },
+    // „ClickFix“ – netikra CAPTCHA ar „klaidos taisymas“: liepia paspausti Win+R ir įklijuoti komandą.
+    // 2025–2026 m. viena dažniausių kenkėjiškų programų platinimo schemų.
+    {
+      id: 'clickfix', w: 60, critical: true, re: [
+        /(win(dows)?|⊞|logotipo klavi\S*)\s*(\+|ir|and|\s)\s*["„“']?r\b/i,
+        /powershell|mshta|cmd(\.exe)?\s+\/c|curl\s+[^\s]+\s*\|\s*(ba|z)?sh|iex\s*\(|invoke-(webrequest|expression)/i,
+        /(atidarykite|paleiskite|open)\s+(terminal|terminalą|run dialog|„vykdyti“|vykdymo lang)/i,
+        /(įklijuokite|iklijuokite|paste)\s.{0,40}(terminal|powershell|run|vykdyti|komand)/i
+      ]
+    },
+    // Skambutis / žinutė apie „naują įrenginį“ ar „įsilaužimą“ – po to liepiama nepasitikėti banku ar policija
+    {
+      id: 'fake_support', w: 35, re: [
+        /(google|apple|microsoft|facebook|meta|bank\S*)\s.{0,30}(asistent|pagalb|palaikym|technin)\S*.{0,60}(nauj\S* įrengin|prijungtas|įsilauž|isilauz)/i,
+        /(nauj\S* įrengin|naujas įrenginys).{0,40}(prijungtas|susietas|prisijungė)/i,
+        /new device (was |has been )?(linked|added|connected|signed in)|your (apple id|google account|icloud) (is|was|has been) (locked|compromised|used)|tech(nical)? support (team|department)/i,
+        /nesakykite (bankui|policijai|artimiesiems)|niekam apie tai nesakykite|don'?t tell (the bank|anyone|your family)/i
+      ]
+    },
+    // Lojalumo taškai, prenumerata, mokestis grąžinamas – 2025–2026 m. masinis SMS masalas
+    {
+      id: 'points_expiring', w: 30, re: [
+        /(taškai|tasku|taškų|bonus\S*|premij\S*)\s.{0,30}(baigia galioti|nustos galioti|pasibaigs|išnyks|bus panaikint)/i,
+        /(points|rewards|miles|bonus)\s.{0,20}(expire|expiring|will be lost)|redeem (your|now)/i,
+        /(prenumerat|abonement)\S*\s.{0,30}(sustabdyt|nepavyko apmokėti|nepavyko nuskaityti|baigėsi)|subscription (has been )?(suspended|expired|could not be renewed)|payment (failed|declined).{0,30}(update|renew)/i
+      ]
+    },
+    // Pokalbio pradžia „suklydau numeriu“ – „kiaulių skerdimo“ (pig butchering) investicinė apgaulė
+    {
+      id: 'wrong_number', w: 20, re: [
+        /(atsiprašau|atsiprasau|sorry)[,!.]?\s.{0,20}(suklydau numer|ne tas numer|neteisingas numer|wrong number)|is this (still )?\w+'s number\??|ar čia (vis dar )?\w+ numeris/i
+      ]
+    },
+    // SIM / eSIM perėmimas
+    {
+      id: 'sim_swap', w: 45, critical: true, re: [
+        /e-?sim\S*\s.{0,40}(aktyv|perkel|patvirtin|kod)|sim kortel\S*\s.{0,30}(keit|perkel|blokuo)|(activate|transfer|confirm) (your )?e-?sim|sim (swap|replacement|port)/i
+      ]
+    },
+    // „Žinomas žmogus investuoja“ – dirbtinio intelekto (deepfake) reklamos
+    {
+      id: 'celebrity', w: 30, re: [
+        /(elon musk|nausėd|nauseda|šimonyt|simonyt|zelensk|bill gates|lietuvos bank)\S*\s.{0,60}(investuo|investic|platform|pelną|uždirb|kripto|invest|profit|earn)/i,
+        /(dirbtinis intelektas|ai|kvantin\S*|quantum)\s.{0,20}(prekybos|trading)\s.{0,10}(robot|bot|platform|sistem)/i
+      ]
+    },
+    // QR kodai ant lipdukų (parkomatai, paspirtukai, krovimo stotelės) – „quishing“
+    {
+      id: 'qr_pay', w: 20, re: [
+        /(nuskenuokite|nuskanuokite|skenuokite|scan)\s.{0,20}(qr|kod)\S*.{0,40}(apmok|sumok|mokėj|pay|bauda|fine|aktyv|parkav|parking)/i
+      ]
     }
   ];
 
   /* ---------- Pagalbinės funkcijos ---------- */
   function stripDiacritics(s) {
     return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  /* ---------- Tarptautiniai domenai (IDN) ir netikros raidės ---------- */
+  // RFC 3492 „punycode“ dekodavimas: xn--pypal-4ve → pаypal (su kirilicos „а“)
+  function punyDecode(label) {
+    const base = 36, tMin = 1, tMax = 26, skew = 38, damp = 700;
+    let n = 128, i = 0, bias = 72;
+    const out = [];
+    const d = label.lastIndexOf('-');
+    for (let j = 0; j < Math.max(0, d); j++) out.push(label.charCodeAt(j));
+    const digit = (c) => (c - 48 < 10 ? c - 22 : c - 65 < 26 ? c - 65 : c - 97 < 26 ? c - 97 : base);
+    const adapt = (delta, num, first) => {
+      let k = 0;
+      delta = first ? Math.floor(delta / damp) : delta >> 1;
+      delta += Math.floor(delta / num);
+      for (; delta > ((base - tMin) * tMax) >> 1; k += base) delta = Math.floor(delta / (base - tMin));
+      return Math.floor(k + ((base - tMin + 1) * delta) / (delta + skew));
+    };
+    for (let idx = d > 0 ? d + 1 : 0; idx < label.length;) {
+      const oldi = i;
+      for (let w = 1, k = base; ; k += base) {
+        if (idx >= label.length) return null;
+        const dg = digit(label.charCodeAt(idx++));
+        if (dg >= base) return null;
+        i += dg * w;
+        const t = k <= bias ? tMin : k >= bias + tMax ? tMax : k - bias;
+        if (dg < t) break;
+        w *= base - t;
+      }
+      bias = adapt(i - oldi, out.length + 1, oldi === 0);
+      n += Math.floor(i / (out.length + 1));
+      i %= out.length + 1;
+      out.splice(i++, 0, n);
+    }
+    return String.fromCodePoint.apply(null, out);
+  }
+
+  function decodeHost(host) {
+    return host.split('.').map((l) => {
+      if (!l.startsWith('xn--')) return l;
+      const dec = punyDecode(l.slice(4));
+      return dec == null ? l : dec;
+    }).join('.');
+  }
+
+  // Raidės, kurios atrodo kaip lotyniškos (Unicode TR39 „confusables“ pagrindinė dalis)
+  const CONFUSABLES = {
+    'а': 'a', 'в': 'b', 'е': 'e', 'ё': 'e', 'к': 'k', 'м': 'm', 'н': 'h', 'о': 'o', 'р': 'p', 'с': 'c', 'т': 't',
+    'у': 'y', 'х': 'x', 'ѕ': 's', 'і': 'i', 'ї': 'i', 'ј': 'j', 'ԁ': 'd', 'ԛ': 'q', 'ԝ': 'w', 'ӏ': 'l', 'ɡ': 'g',
+    'һ': 'h', 'ո': 'n', 'ս': 'u', 'օ': 'o', 'α': 'a', 'β': 'b', 'ε': 'e', 'ι': 'i', 'κ': 'k', 'ν': 'v', 'ο': 'o',
+    'ρ': 'p', 'τ': 't', 'υ': 'u', 'χ': 'x', 'ı': 'i', 'ɩ': 'i', 'ł': 'l', 'ƚ': 'l', 'ø': 'o', 'ð': 'd',
+    'ɑ': 'a', 'ɒ': 'a', 'ʀ': 'r', 'ʏ': 'y', 'ᴄ': 'c', 'ᴅ': 'd', 'ᴇ': 'e', 'ᴋ': 'k', 'ᴍ': 'm', 'ᴏ': 'o', 'ᴘ': 'p',
+    'ᴛ': 't', 'ᴜ': 'u', 'ᴠ': 'v', 'ᴡ': 'w', 'ᴢ': 'z'
+  };
+  function skeleton(s) {
+    let out = '';
+    for (const ch of s) out += CONFUSABLES[ch] || ch;
+    return stripDiacritics(out).toLowerCase();
+  }
+  function scriptOf(ch) {
+    if (/[a-z]/i.test(ch)) return 'latin';
+    if (/[À-ɏḀ-ỿ]/.test(ch)) return 'latin';
+    if (/[Ѐ-ӿԀ-ԯ]/.test(ch)) return 'cyrillic';
+    if (/[Ͱ-Ͽ]/.test(ch)) return 'greek';
+    if (/[԰-֏]/.test(ch)) return 'armenian';
+    if (/[0-9-]/.test(ch)) return null;
+    return 'other';
+  }
+  // Vienoje domeno dalyje sumaišytos skirtingos abėcėlės (pvz. lotynų + kirilica) – beveik visada apgaulė
+  function mixedScripts(label) {
+    const set = new Set();
+    for (const ch of label) { const s = scriptOf(ch); if (s) set.add(s); }
+    return set.size > 1;
   }
 
   function lev(a, b) {
@@ -310,7 +435,25 @@
     if (opts.blocklist && inList(host, opts.blocklist)) add('url_blocklisted', 100, { host }, true);
 
     if (isIp(host)) add('url_ip', 55, { host }, true);
-    if (/(^|\.)xn--/.test(host)) add('url_punycode', 55, { host }, true);
+    // Tarptautinis domenas: dekoduojame ir tikriname, ar netikros raidės neslepia prekės ženklo
+    const decoded = decodeHost(host);
+    if (decoded !== host) {
+      const flatSkel = skeleton(decoded).replace(/[.-]/g, '');
+      let idnBrand = null;
+      for (const b of BRANDS) {
+        if (b.keys.some((k) => k.replace(/-/g, '').length >= 4 && flatSkel.includes(k.replace(/-/g, '')))) { idnBrand = b; break; }
+      }
+      const mixed = decoded.split('.').some(mixedScripts);
+      if (idnBrand) add('url_idn_brand', 70, { brand: idnBrand.name, decoded }, true);
+      else if (mixed) add('url_idn_mixed', 55, { decoded }, true);
+      else add('url_idn', 5, { decoded });
+    }
+    if (opts.feed && matchFeed(u, opts.feed)) add('url_blocklisted', 100, { host }, true);
+    if (typeof opts.domainAgeDays === 'number' && !officialBrand(host)) {
+      if (opts.domainAgeDays <= 7) add('url_new_domain', 45, { days: opts.domainAgeDays });
+      else if (opts.domainAgeDays <= 30) add('url_new_domain', 30, { days: opts.domainAgeDays });
+      else if (opts.domainAgeDays >= 365 * 3) add('url_old_domain', -10, { years: Math.floor(opts.domainAgeDays / 365) });
+    }
     // „https://swedbank.lt@blogas.top“ – tikrasis adresas yra po @
     const rawStr = String(raw);
     if (u.username || /^[a-z]+:\/\/[^/]*@/i.test(rawStr)) add('url_at', 55, { host }, true);
@@ -358,7 +501,7 @@
 
       const depth = host.split('.').length;
       if (depth >= 5) add('url_deep', 15, { host });
-      if ((host.match(/-/g) || []).length >= 3) add('url_hyphens', 10, { host });
+      if ((decoded.replace(/xn--/g, '').match(/-/g) || []).length >= 3) add('url_hyphens', 10, { host });
       if (host.length > 40) add('url_long', 10, { host });
       if (/\d{4,}/.test(reg)) add('url_digits', 10, { host: reg });
       // Nemokami svetainių kūrėjai – labai mėgstami sukčių
@@ -374,6 +517,54 @@
     if (!official && /(login|signin|verify|bank|account|wallet|pay|bauda|fine|parcel|track|customs|refund|secure|confirm)/.test(path)) add('url_path_keywords', 10, {});
 
     return finalize({ valid: true, input: raw, href: u.href, host, registrable: reg, official: official ? official.name : null, signals });
+  }
+
+  // Bendrinami serveriai (sites.google.com ir pan.) – blokuojame tik konkretų puslapį, ne visą serverį
+  const SHARED_HOSTS = new Set([
+    'sites.google.com', 'docs.google.com', 'drive.google.com', 'forms.gle', 'storage.googleapis.com',
+    'firebasestorage.googleapis.com', 'dropbox.com', 'www.dropbox.com', 'dl.dropboxusercontent.com', 'onedrive.live.com',
+    '1drv.ms', 'github.com', 'raw.githubusercontent.com', 'bit.ly', 'tinyurl.com', 'linktr.ee', 'notion.so', 'www.notion.so',
+    'ipfs.io', 'cloudflare-ipfs.com', 'telegra.ph', 'docs.zoho.com', 'forms.office.com', 'sway.office.com', 'canva.com', 'www.canva.com'
+  ]);
+
+  function normUrl(u) {
+    return (u.hostname.toLowerCase() + u.pathname.replace(/\/+$/, '')).toLowerCase();
+  }
+
+  // Grąžina { hosts: Set, urls: Set } iš sąrašo eilučių (domenai arba pilnos nuorodos)
+  function buildFeed(lines) {
+    const hosts = new Set(), urls = new Set();
+    for (let line of lines) {
+      line = String(line).trim();
+      if (!line || line[0] === '#' || line[0] === '!') continue;
+      // „0.0.0.0 blogas.lt“ (hosts failo formatas)
+      const hm = /^(?:0\.0\.0\.0|127\.0\.0\.1)\s+(\S+)/.exec(line);
+      if (hm) line = hm[1];
+      const u = parseUrl(line);
+      if (!u) continue;
+      const h = u.hostname.toLowerCase();
+      if (!h.includes('.') || h === 'localhost') continue;
+      const hasPath = /^[a-z]+:\/\//i.test(line) && u.pathname.length > 1;
+      if (SHARED_HOSTS.has(h)) {
+        if (hasPath) urls.add(normUrl(u));
+      } else if (!officialBrand(h)) {
+        hosts.add(h);
+      }
+    }
+    return { hosts, urls };
+  }
+
+  function matchFeed(u, feed) {
+    if (typeof u === 'string') u = parseUrl(u);
+    if (!u || !feed) return false;
+    const h = u.hostname.toLowerCase();
+    if (feed.hosts && !SHARED_HOSTS.has(h) && inList(h, feed.hosts)) return true;
+    if (feed.urls && feed.urls.size) {
+      const n = normUrl(u);
+      const parts = n.split('/');
+      for (let i = parts.length; i >= 2; i--) if (feed.urls.has(parts.slice(0, i).join('/'))) return true;
+    }
+    return false;
   }
 
   function inList(host, list) {
@@ -646,7 +837,7 @@
   const api = {
     BRANDS, analyzeUrl, analyzeText, analyzeIban, analyzeProfile, extractUrls, classifyField,
     registrable, officialBrand: (h) => { const b = officialBrand(String(h).toLowerCase()); return b ? b.name : null; },
-    inList, ibanCountries: Object.keys(IBAN_LEN), version: '1.0.0'
+    inList, ibanCountries: Object.keys(IBAN_LEN), decodeHost, skeleton, buildFeed, matchFeed, version: '1.1.0'
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.ScamDetector = api;

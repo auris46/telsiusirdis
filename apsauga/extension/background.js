@@ -1,40 +1,73 @@
-/* Apsauga – fono procesas: blokuoja pavojingas svetaines ir atnaujina sukčių sąrašą */
+/* Apsauga – fono procesas: blokuoja pavojingas svetaines ir atnaujina sukčių sąrašus */
 if (typeof importScripts === 'function' && typeof ScamDetector === 'undefined') {
   importScripts('shared/i18n.js', 'shared/detector.js');
 }
 
-const FEED_URL = 'https://raw.githubusercontent.com/mitchellkrogza/Phishing.Database/master/phishing-domains-ACTIVE.txt';
-const DEFAULT_SETTINGS = { enabled: true, strict: true, feed: true };
+// Vieši, nemokami sukčių svetainių sąrašai (atnaujinami kasdien / kas 12 val.)
+const FEEDS = [
+  'https://raw.githubusercontent.com/mitchellkrogza/Phishing.Database/master/phishing-domains-ACTIVE.txt',
+  'https://raw.githubusercontent.com/openphish/public_feed/refs/heads/main/feed.txt'
+];
+const DEFAULT_SETTINGS = { enabled: true, strict: true, feed: true, rdap: true };
 const BLOCK_MIN_SCORE = 60; // naršant blokuojame tik tikrai pavojingas (≥60) – kad netrukdytume be reikalo
+const AGE_TTL = 7 * 864e5;
 
-let feedSet = null;
+let feed = null;
 let feedLoading = null;
 
 function loadFeed() {
-  if (feedSet) return Promise.resolve(feedSet);
+  if (feed) return Promise.resolve(feed);
   if (!feedLoading) {
     feedLoading = chrome.storage.local.get('feedText').then((r) => {
-      feedSet = new Set((r.feedText || '').split('\n').filter(Boolean));
-      return feedSet;
+      feed = ScamDetector.buildFeed((r.feedText || '').split('\n'));
+      return feed;
     });
   }
   return feedLoading;
 }
 
 async function updateFeed() {
-  const res = await fetch(FEED_URL, { cache: 'no-store' });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const text = await res.text();
-  const hosts = [];
-  for (let line of text.split('\n')) {
-    line = line.trim().toLowerCase();
-    if (!line || line.startsWith('#') || !/^[a-z0-9.-]+\.[a-z0-9-]{2,}$/.test(line)) continue;
-    if (ScamDetector.officialBrand(line)) continue; // niekada neblokuoti oficialių domenų
-    hosts.push(line);
+  const lines = [];
+  let ok = 0;
+  for (const url of FEEDS) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const text = await res.text();
+      for (const l of text.split('\n')) if (l.trim()) lines.push(l.trim());
+      ok++;
+    } catch (e) { /* vienas šaltinis nepasiekiamas – naudojame kitus */ }
   }
-  feedSet = new Set(hosts);
-  await chrome.storage.local.set({ feedText: hosts.join('\n'), feedCount: hosts.length, feedUpdated: Date.now() });
-  return hosts.length;
+  if (!ok) throw new Error('feeds unavailable');
+  feed = ScamDetector.buildFeed(lines);
+  // Saugome jau išvalytą sąrašą: domenai + konkrečios nuorodos bendrinamuose serveriuose
+  const stored = Array.from(feed.hosts).concat(Array.from(feed.urls).map((u) => 'https://' + u));
+  const count = feed.hosts.size + feed.urls.size;
+  await chrome.storage.local.set({ feedText: stored.join('\n'), feedCount: count, feedUpdated: Date.now() });
+  return count;
+}
+
+// Domeno registracijos data per RDAP (WHOIS įpėdinis). Siunčiamas tik domeno pavadinimas.
+async function domainAge(reg) {
+  const r = await chrome.storage.local.get('ageCache');
+  const cache = r.ageCache || {};
+  const hit = cache[reg];
+  if (hit && Date.now() - hit.ts < AGE_TTL) return hit.days;
+  let days = null;
+  try {
+    const res = await fetch('https://rdap.org/domain/' + encodeURIComponent(reg), { credentials: 'omit' });
+    if (res.ok) {
+      const j = await res.json();
+      const ev = (j.events || []).find((e) => e.eventAction === 'registration');
+      const d = ev && new Date(ev.eventDate);
+      if (d && !isNaN(d)) days = Math.max(0, Math.floor((Date.now() - d) / 864e5));
+    }
+  } catch (e) { /* registras nepasiekiamas */ }
+  cache[reg] = { days, ts: Date.now() };
+  const keys = Object.keys(cache);
+  if (keys.length > 2000) for (const k of keys.slice(0, keys.length - 2000)) delete cache[k];
+  await chrome.storage.local.set({ ageCache: cache });
+  return days;
 }
 
 async function getState() {
@@ -66,21 +99,24 @@ async function verdictFor(url) {
   if (ScamDetector.inList(host, st.blocked)) return { reason: 'user', host };
   if (ScamDetector.officialBrand(host)) return null;
   if (st.settings.feed) {
-    const feed = await loadFeed();
-    if (ScamDetector.inList(host, feed)) return { reason: 'feed', host };
+    const f = await loadFeed();
+    if (ScamDetector.matchFeed(u, f)) return { reason: 'feed', host };
   }
   const r = ScamDetector.analyzeUrl(url);
   if (r.level === 'danger' && r.score >= BLOCK_MIN_SCORE) return { reason: 'heuristic', host };
   return null;
 }
 
-chrome.webNavigation.onBeforeNavigate.addListener(async (d) => {
+async function onNav(d) {
   if (d.frameId !== 0) return;
   const v = await verdictFor(d.url);
   if (!v) return;
   const page = chrome.runtime.getURL('blocked.html') + '?u=' + encodeURIComponent(d.url) + '&r=' + v.reason;
   try { await chrome.tabs.update(d.tabId, { url: page }); } catch (e) { /* skirtukas uždarytas */ }
-});
+}
+chrome.webNavigation.onBeforeNavigate.addListener(onNav);
+// Galutinis adresas po peradresavimų (trumpintos nuorodos, „tracking“ grandinės)
+chrome.webNavigation.onCommitted.addListener(onNav);
 
 chrome.runtime.onInstalled.addListener(async () => {
   const r = await chrome.storage.local.get('settings');
@@ -113,7 +149,11 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       reply({ ok: true });
     } else if (msg.type === 'updateFeed') {
       try { reply({ ok: true, count: await updateFeed() }); } catch (e) { reply({ ok: false, error: String(e) }); }
-    } else if (msg.type === 'showGuard' && sender.tab) {
+    } else if (msg.type === 'domainAge') {
+      const st = await getState();
+      if (!st.settings.rdap || !msg.reg || ScamDetector.officialBrand(msg.reg)) { reply({ days: null }); return; }
+      reply({ days: await domainAge(msg.reg) });
+    } else if ((msg.type === 'showGuard' || msg.type === 'clickfix') && sender.tab) {
       // Laukelis iframe viduje – rodome perspėjimą viršutiniame puslapyje
       chrome.tabs.sendMessage(sender.tab.id, msg, { frameId: 0 }).catch(() => {});
       reply({ ok: true });

@@ -1,5 +1,5 @@
 /* Apsauga – leidžia programėlei veikti be interneto */
-const CACHE = 'apsauga-v1';
+const CACHE = 'apsauga-v2';
 const FILES = [
   './',
   './index.html',
@@ -9,7 +9,8 @@ const FILES = [
   './extension/shared/detector.js',
   './extension/icons/icon.svg',
   './extension/icons/icon192.png',
-  './extension/icons/icon512.png'
+  './extension/icons/icon512.png',
+  './vendor/jsQR.js'
 ];
 
 self.addEventListener('install', (e) => {

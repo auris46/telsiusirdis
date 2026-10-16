@@ -78,17 +78,56 @@ test('profilis', () => {
 });
 
 test('kiekvienas požymis turi vertimą LT ir EN', () => {
+  const src = require('fs').readFileSync(require.resolve('../extension/shared/detector.js'), 'utf8');
   const ids = new Set();
-  const collect = (r) => r.signals.forEach(s => ids.add(s.id));
-  collect(D.analyzeText('PIN anydesk saugią sąskaitą gift card bauda siunta užblokuota sąskaita skubiai laimėjote investuok garantuotą pelną mama naujas numeris parašyk WhatsApp banko saugumo tarnyba pervesk 1,50 € darbas iš namų mano brangioji https://swedbank.lt.x.top', { sender: '+37060000000', homeCountryCode: '44' }));
+  for (const m of src.matchAll(/add\('([a-z_]+)'/g)) ids.add(m[1]);
+  for (const m of src.matchAll(/\bid: '(?!t_|p_)([a-z_]+)', w: \d+, (critical|negatable|re)/g)) ids.add('t_' + m[1]);
+  ids.add('url_invalid');
+  for (const m of src.matchAll(/\bid: '(t_[a-z][a-z_]*[a-z])'/g)) ids.add(m[1]);
+  for (const m of src.matchAll(/signals\.push\(\{ id: '([a-z][a-z_]*[a-z])'/g)) ids.add(m[1]);
+  const flags = /const PROFILE_FLAGS = \{([^}]+)\}/.exec(src)[1];
+  for (const m of flags.matchAll(/([a-z_]+):/g)) ids.add('p_' + m[1]);
+  assert.ok(ids.size > 60, 'rasta per mažai požymių: ' + ids.size);
   for (const lang of ['lt', 'en']) {
-    for (const key of Object.keys(I18N.strings.lt.sig)) {
-      assert.ok(I18N.strings[lang].sig[key], lang + ' trūksta ' + key);
-    }
     for (const id of ids) assert.ok(I18N.strings[lang].sig[id], lang + ' trūksta ' + id);
+    for (const f of Object.keys(I18N.strings.lt.flags)) assert.ok(I18N.strings[lang].flags[f], lang + ' trūksta flags.' + f);
   }
   for (const key of Object.keys(I18N.strings.lt)) {
-    if (key === 'sig') continue;
     assert.ok(I18N.strings.en[key] != null, 'en trūksta ' + key);
   }
+});
+
+test('2025–2026 m. schemos', () => {
+  const scams = [
+    'Norėdami patvirtinti, kad nesate robotas: paspauskite Windows + R, tada CTRL+V ir Enter',
+    'Press Win+R, paste the verification code and press Enter',
+    'Telia: jūsų 2450 taškų baigia galioti šiandien! Iškeiskite: telia-taskai.top',
+    'Patvirtinkite eSIM aktyvavimą, atsiųskite kodą',
+    'Nausėda investuoja į naują platformą – pelnas 3000 € per savaitę',
+    'E-ZPass: You have an unpaid toll balance of $4.15. Pay within 24 hours to avoid a fine: https://ezpass-toll.icu/pay'
+  ];
+  for (const s of scams) {
+    const r = D.analyzeText(s);
+    assert.strictEqual(r.level, 'danger', s + '\n→ ' + JSON.stringify(r.signals.map(x => x.id)));
+  }
+  assert.strictEqual(D.analyzeText('Atsiprašau, turbūt suklydau numeriu. Ar čia Jonas?').level, 'warn');
+});
+
+test('netikros raidės (IDN) ir naujas domenas', () => {
+  assert.strictEqual(D.analyzeUrl('https://аpple.com').level, 'danger'); // kirilicos „а“
+  assert.ok(D.analyzeUrl('https://аpple.com').signals.some(s => s.id === 'url_idn_brand'));
+  assert.strictEqual(D.analyzeUrl('https://www.šaltinis.lt').level, 'ok'); // tikros lietuviškos raidės
+  assert.strictEqual(D.decodeHost('xn--pypal-4ve.com'), 'pаypal.com');
+  assert.strictEqual(D.analyzeUrl('https://naujaparduotuve.example', { domainAgeDays: 3 }).level, 'warn');
+  assert.strictEqual(D.analyzeUrl('https://swedbank.lt', { domainAgeDays: 3 }).level, 'ok');
+});
+
+test('sukčių sąrašai (hosts, URL, bendrinami serveriai)', () => {
+  const f = D.buildFeed(['https://sites.google.com/view/orange-secu/accueil?x=1', 'http://evil.top/a', '0.0.0.0 bad.example', '# komentaras', 'https://www.paypal.com/x']);
+  assert.ok(D.matchFeed('https://sites.google.com/view/orange-secu/accueil/', f));
+  assert.ok(!D.matchFeed('https://sites.google.com/view/kita', f));
+  assert.ok(D.matchFeed('https://login.evil.top/', f));
+  assert.ok(D.matchFeed('http://bad.example', f));
+  assert.ok(!D.matchFeed('https://www.paypal.com/x', f), 'oficialūs domenai neblokuojami');
+  assert.strictEqual(D.analyzeUrl('https://login.evil.top', { feed: f }).level, 'danger');
 });

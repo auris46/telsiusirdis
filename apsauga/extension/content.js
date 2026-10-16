@@ -25,10 +25,12 @@
   }
   const siteHost = topHost();
 
-  let settings = { enabled: true, strict: true };
+  let settings = { enabled: true, strict: true, rdap: true };
   let trusted = [];
   let unlocked = false;
   let overlayOpen = false;
+  let youngDomain = false; // svetainė užregistruota prieš ≤30 d. (RDAP)
+  let ageAsked = false;
 
   const urlRisk = [D.analyzeUrl(location.href), siteHost !== ownHost ? D.analyzeUrl('https://' + siteHost) : null]
     .filter(Boolean)
@@ -59,15 +61,30 @@
 
   function shouldBlock(kind) {
     if (!settings.enabled || unlocked || isTrusted()) return false;
-    const risky = urlRisk.level !== 'ok' || contentRisk();
+    const risky = urlRisk.level !== 'ok' || contentRisk() || youngDomain;
     if (kind === 'pin') return true; // kortelės PIN niekada neįvedamas svetainėje
     if (kind === 'password') return risky;
     return risky || settings.strict; // kortelė, CVV, vienkartinis kodas
   }
 
+  // Jei puslapyje yra slaptų duomenų laukelių – iš anksto sužinome domeno amžių
+  function askAge() {
+    if (ageAsked || !settings.rdap || isTrusted() || !/[a-z]/i.test(siteHost)) return;
+    ageAsked = true;
+    chrome.runtime.sendMessage({ type: 'domainAge', reg: D.registrable(siteHost) })
+      .then((r) => { if (r && typeof r.days === 'number' && r.days <= 30) youngDomain = true; })
+      .catch(() => {});
+  }
+  function scanFields() {
+    for (const el of document.querySelectorAll('input')) {
+      if (D.classifyField(el)) { askAge(); return; }
+    }
+  }
+
   function guard(e) {
     const t = e.composedPath ? e.composedPath()[0] : e.target;
     const kind = D.classifyField(t);
+    if (kind) askAge();
     if (!kind || !shouldBlock(kind)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -82,8 +99,44 @@
   }
 
   chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type === 'showGuard' && isTop) showOverlay(msg.kind);
+    if ((msg.type === 'showGuard' || msg.type === 'clickfix') && isTop) showOverlay(msg.kind);
   });
+
+  /* ---------- ClickFix: netikra CAPTCHA liepia įklijuoti komandą ---------- */
+  document.addEventListener('apsauga:clickfix', (e) => {
+    if (!settings.enabled || isTrusted()) {
+      // Patikima svetainė – grąžiname tikrąjį tekstą
+      if (typeof e.detail === 'string' && e.detail) navigator.clipboard.writeText(e.detail).catch(() => {});
+      return;
+    }
+    if (isTop) showOverlay('clickfix');
+    else chrome.runtime.sendMessage({ type: 'clickfix', kind: 'clickfix' }).catch(() => {});
+  });
+
+  const WIN_R = /(win(dows)?\s*(key|klavi\S*)?|⊞|logo\S*)\s*\+\s*["„“']?r\b/i;
+  const PASTE = /(ctrl|control|⌘|cmd|vald\S*)\s*\+\s*["„“']?v\b|\b(paste|įklijuokite|iklijuokite|вставьте|wklej)\b/i;
+  let pageWarned = false;
+  function scanClickfix() {
+    if (pageWarned || !isTop || !settings.enabled || isTrusted() || !document.body) return;
+    const text = (document.body.innerText || '').slice(0, 30000);
+    if (WIN_R.test(text) && PASTE.test(text)) { pageWarned = true; showOverlay('clickfixPage'); }
+  }
+
+  function onReady() {
+    scanFields();
+    scanClickfix();
+    // Netikros CAPTCHA instrukcijos dažnai atsiranda tik paspaudus „Aš ne robotas“
+    let n = 0;
+    const mo = new MutationObserver(() => {
+      if (++n > 200) { mo.disconnect(); return; }
+      clearTimeout(mo.t);
+      mo.t = setTimeout(() => { scanFields(); scanClickfix(); }, 400);
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+    setTimeout(() => mo.disconnect(), 60000);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady, { once: true });
+  else onReady();
 
   /* ---------- Perspėjimo langas ---------- */
   function showOverlay(kind) {
@@ -115,8 +168,9 @@ button{font:inherit;font-size:18px;font-weight:700;border-radius:14px;padding:14
     <button class="trust"></button>
   </div>
 </div>`;
-    root.querySelector('h1 span').textContent = T.extPinTitle;
-    root.querySelector('#d').textContent = T.extPinBody[kind] || T.extPinBody.pin;
+    const isClip = kind === 'clickfix' || kind === 'clickfixPage';
+    root.querySelector('h1 span').textContent = kind === 'clickfix' ? T.extClipTitle : kind === 'clickfixPage' ? T.verdict.danger : T.extPinTitle;
+    root.querySelector('#d').textContent = kind === 'clickfix' ? T.extClipBody : kind === 'clickfixPage' ? T.extClickfixPage : (T.extPinBody[kind] || T.extPinBody.pin);
     const hl = root.querySelector('.hostline');
     const parts = T.extPinUnknown.split('{host}');
     hl.append(document.createTextNode(parts[0]));
@@ -124,6 +178,7 @@ button{font:inherit;font-size:18px;font-weight:700;border-radius:14px;padding:14
     hs.className = 'host';
     hs.textContent = siteHost;
     hl.append(hs, document.createTextNode(parts[1] || ''));
+    if (isClip) hl.hidden = true;
     const leave = root.querySelector('.leave');
     const trust = root.querySelector('.trust');
     leave.textContent = T.extPinLeave;

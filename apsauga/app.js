@@ -46,6 +46,7 @@
     });
     list('#extSteps', T.protExtSteps);
     list('#golden', T.protRules);
+    list('#builtin', T.protBuiltin);
     const hs = $('#helpSteps');
     hs.textContent = '';
     for (const [title, body] of T.helpSteps) {
@@ -264,16 +265,100 @@
   $('#msg').addEventListener('paste', () => setTimeout(checkMsg, 0));
 
   /* ---------- Nuoroda ---------- */
+  let linkAge = null; // { reg, days, date } – gauta iš viešo registro tik vartotojui paprašius
   function checkLink() {
     const val = $('#link').value.trim();
     if (!val) return;
-    const res = D.analyzeUrl(val);
-    const run = () => render('#linkRes', res, res.valid ? urlBox(res) : null);
+    let res = D.analyzeUrl(val);
+    if (linkAge && res.registrable !== linkAge.reg) linkAge = null;
+    if (linkAge && linkAge.days != null) res = D.analyzeUrl(val, { domainAgeDays: linkAge.days });
+    const run = () => {
+      render('#linkRes', res, res.valid ? urlBox(res) : null);
+      const canAge = res.valid && !res.official && /[a-z]/i.test(res.registrable || '') && !/^\d+(\.\d+){3}$/.test(res.host);
+      $('#ageBox').hidden = !canAge;
+      $('#ageRes').textContent = !linkAge ? '' : linkAge.days == null ? T.ageUnknown
+        : I.fmt(T.ageResult, { date: linkAge.date.toLocaleDateString(lang), days: linkAge.days });
+    };
     lastResults.link = run;
     run();
   }
+
+  // Domeno amžius per RDAP (oficialus WHOIS įpėdinis). Siunčiamas tik domeno pavadinimas.
+  async function checkAge() {
+    const res = D.analyzeUrl($('#link').value.trim());
+    if (!res.valid) return;
+    $('#ageBtn').disabled = true;
+    $('#ageRes').textContent = '…';
+    let age = { reg: res.registrable, days: null, date: null };
+    try {
+      const r = await fetch('https://rdap.org/domain/' + encodeURIComponent(res.registrable), { referrerPolicy: 'no-referrer', credentials: 'omit' });
+      if (r.ok) {
+        const j = await r.json();
+        const ev = (j.events || []).find((e) => e.eventAction === 'registration');
+        if (ev && ev.eventDate) {
+          const d = new Date(ev.eventDate);
+          if (!isNaN(d)) age = { reg: res.registrable, date: d, days: Math.max(0, Math.floor((Date.now() - d) / 864e5)) };
+        }
+      }
+    } catch (e) { /* registras nepasiekiamas */ }
+    linkAge = age;
+    $('#ageBtn').disabled = false;
+    checkLink();
+  }
+  $('#ageBtn').addEventListener('click', checkAge);
+
+  /* ---------- QR kodas (nuotrauka) ---------- */
+  function loadJsQR() {
+    if (window.jsQR) return Promise.resolve(window.jsQR);
+    return new Promise((ok, fail) => {
+      const sc = document.createElement('script');
+      sc.src = 'vendor/jsQR.js';
+      sc.onload = () => ok(window.jsQR);
+      sc.onerror = fail;
+      document.head.append(sc);
+    });
+  }
+  async function decodeQr(file) {
+    const bmp = await createImageBitmap(file);
+    if ('BarcodeDetector' in window) {
+      try {
+        const det = new window.BarcodeDetector({ formats: ['qr_code'] });
+        const codes = await det.detect(bmp);
+        if (codes.length) return codes[0].rawValue;
+      } catch (e) { /* naudosime jsQR */ }
+    }
+    const jsQR = await loadJsQR();
+    const scale = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * scale);
+    c.height = Math.round(bmp.height * scale);
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    const img = ctx.getImageData(0, 0, c.width, c.height);
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+    return code ? code.data : null;
+  }
+  $('#qrFile').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    let data = null;
+    try { data = await decodeQr(file); } catch (err) { data = null; }
+    if (!data) { toast(T.qrNone); return; }
+    if (/^(https?:\/\/|www\.)/i.test(data.trim()) || /^[a-z0-9.-]+\.[a-z]{2,}(\/|$)/i.test(data.trim())) {
+      $('#link').value = data.trim();
+      linkAge = null;
+      checkLink();
+    } else {
+      // Ne nuoroda (pvz. SMS, tekstas, mokėjimo duomenys) – tikriname kaip žinutę
+      $('#msg').value = T.qrText + '\n' + data;
+      showTab('msg', true);
+      checkMsg();
+    }
+  });
   $('#linkCheck').addEventListener('click', checkLink);
   $('#link').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkLink(); });
+  $('#link').addEventListener('input', () => { linkAge = null; });
   $('#link').addEventListener('paste', () => setTimeout(checkLink, 0));
   $('#linkPaste').addEventListener('click', async () => { if (await pasteInto($('#link'))) checkLink(); });
 

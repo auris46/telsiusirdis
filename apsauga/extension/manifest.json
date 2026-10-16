@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "Apsauga",
   "description": "__MSG_extDesc__",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "default_locale": "en",
   "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
   "action": {
@@ -23,9 +23,16 @@
       "js": ["shared/i18n.js", "shared/detector.js", "content.js"],
       "run_at": "document_start",
       "all_frames": true
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["clipguard.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
     }
   ],
   "browser_specific_settings": {
-    "gecko": { "id": "apsauga@telsiusirdis", "strict_min_version": "115.0" }
+    "gecko": { "id": "apsauga@telsiusirdis", "strict_min_version": "128.0" }
   }
 }

@@ -11,18 +11,19 @@
   $('lblEnabled').textContent = T.extPopupProtection;
   $('lblStrict').textContent = T.extPopupStrict;
   $('lblFeed').textContent = T.extPopupFeed;
+  $('lblRdap').textContent = T.extPopupRdap;
   $('feedUpdate').textContent = T.extPopupUpdate;
   $('lblCheck').textContent = T.extPopupCheck;
   $('lblTrusted').textContent = T.extPopupTrusted;
   $('lblBlocked').textContent = T.extPopupBlocked;
 
-  const defaults = { enabled: true, strict: true, feed: true };
+  const defaults = { enabled: true, strict: true, feed: true, rdap: true };
   let st = await chrome.storage.local.get(['settings', 'trusted', 'blocked', 'feedCount', 'feedUpdated']);
   let settings = Object.assign({}, defaults, st.settings || {});
   let trusted = st.trusted || [];
   let blocked = st.blocked || [];
 
-  for (const k of ['enabled', 'strict', 'feed']) {
+  for (const k of ['enabled', 'strict', 'feed', 'rdap']) {
     $(k).checked = !!settings[k];
     $(k).addEventListener('change', async () => {
       settings[k] = $(k).checked;
