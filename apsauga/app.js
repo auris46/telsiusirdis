@@ -60,6 +60,7 @@
     }
     renderFlags();
     renderCountries();
+    renderExamples();
     renderLangButtons();
     for (const k of Object.keys(lastResults)) lastResults[k]();
   }
@@ -84,6 +85,22 @@
       box.append(b);
     }
   }
+  function chips(sel, items, onPick) {
+    const box = $(sel);
+    box.textContent = '';
+    items.forEach((it) => {
+      const b = el('button', 'chip', it.label);
+      b.type = 'button';
+      b.addEventListener('click', () => onPick(it));
+      box.append(b);
+    });
+  }
+  function renderExamples() {
+    chips('#msgExamples', T.examples, (ex) => { $('#msg').value = ex.text; $('#sender').value = ex.sender || ''; checkMsg(); });
+    chips('#linkExamples', T.exampleLinks.map((u) => ({ label: u.replace(/^https:\/\//, ''), u })), (ex) => { $('#link').value = ex.u; linkAge = null; checkLink(); });
+    chips('#ibanExamples', [{ label: T.exampleIban }], () => { $('#iban').value = T.exampleIban; $('#who').value = 'bank'; checkIban(); });
+  }
+
   function renderFlags() {
     const box = $('#profFlags');
     const checked = new Set(Array.from(box.querySelectorAll('input:checked')).map((i) => i.value));
@@ -430,6 +447,8 @@
     history.replaceState(null, '', location.pathname + '#zinute');
   } else {
     showTab(fromHash || 'msg');
+    // Peržiūros versijoje iškart parodome pavyzdinį rezultatą
+    if (window.APSAUGA_DEMO && !fromHash) { $('#msg').value = T.examples[0].text; $('#sender').value = T.examples[0].sender; checkMsg(); }
   }
   window.addEventListener('hashchange', () => {
     const t = Object.keys(TAB_HASH).find((k) => TAB_HASH[k] === location.hash.slice(1));

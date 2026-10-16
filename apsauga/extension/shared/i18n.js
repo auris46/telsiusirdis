@@ -28,6 +28,18 @@
     clear: 'Išvalyti',
     pasteDenied: 'Naršyklė neleido įklijuoti automatiškai. Paspauskite laukelį ir įklijuokite ranka.',
 
+    examplesLabel: 'Išbandykite su pavyzdžiu:',
+    examples: [
+      { label: 'Bauda SMS', sender: '+37062012345', text: 'Regitra: Jūsų transporto priemonei skirta nesumokėta bauda 12,50 EUR. Sumokėkite per 24 val., kitaip bauda padidės: https://regitra-baudos.top/lt' },
+      { label: 'Siunta', sender: 'DPD', text: 'DPD: Jūsų siunta sulaikyta sandėlyje, nes adresas neišsamus. Patikslinkite adresą ir sumokėkite 1,99 EUR: dpd-lt.delivery-help.online' },
+      { label: '„Mama, naujas numeris“', sender: '+37069900000', text: 'Labas mama, čia mano naujas numeris, telefonas sudužo. Gal gali skubiai pervesti 450 eur? Vėliau grąžinsiu. Parašyk WhatsApp' },
+      { label: 'Banko „saugumo tarnyba“', sender: '', text: 'Sveiki, skambinu iš banko saugumo tarnybos. Užfiksuota įtartina operacija. Pasakykite Smart-ID kodą ir perveskite pinigus į saugią sąskaitą.' },
+      { label: 'Netikra CAPTCHA', sender: '', text: 'Patvirtinkite, kad nesate robotas: paspauskite Windows + R, tada CTRL + V ir Enter.' },
+      { label: 'Tikra žinutė', sender: 'Swedbank', text: 'Swedbank: niekam nesakykite savo PIN ir Smart-ID kodų. Banko darbuotojai jų niekada neprašo.' }
+    ],
+    exampleLinks: ['https://swedbank.lt.login-secure.top', 'https://pаypal.com/signin', 'https://www.seb.lt'],
+    exampleIban: 'LT60 7300 0101 2345 6789',
+
     linkTitle: 'Patikrinkite nuorodą',
     linkHint: 'Įklijuokite nuorodą. Jos NEATIDARYKITE, kol nepatikrinote.',
     linkPlaceholder: 'Pvz.: https://swedbank-lt.secure-login.xyz',
@@ -334,6 +346,18 @@
     check: 'Check',
     clear: 'Clear',
     pasteDenied: 'Your browser blocked automatic paste. Tap the box and paste manually.',
+
+    examplesLabel: 'Try an example:',
+    examples: [
+      { label: 'Toll fine SMS', sender: '+12025550143', text: 'E-ZPass: You have an unpaid toll balance of $4.15. Pay within 24 hours to avoid a fine: https://ezpass-toll.icu/pay' },
+      { label: 'Parcel', sender: 'Royal Mail', text: 'Your package is held at our depot due to an incomplete address. Pay a small fee of £1.45: https://royalmail-redelivery.com' },
+      { label: '“Hi mum, new number”', sender: '+447700900123', text: 'Hi mum, this is my new number, my phone broke. Can you send me £450 urgently? I will pay you back. Text me on WhatsApp' },
+      { label: 'Bank “security team”', sender: '', text: 'Hello, this is your bank security department. We detected a suspicious transaction. Tell me the verification code and move your money to a safe account.' },
+      { label: 'Fake CAPTCHA', sender: '', text: 'Verify you are human: press Windows + R, then CTRL + V and Enter.' },
+      { label: 'Genuine message', sender: 'PayPal', text: 'PayPal: we will never ask for your password or one-time code. Do not share them with anyone.' }
+    ],
+    exampleLinks: ['https://paypal.com.login-secure.top', 'https://pаypal.com/signin', 'https://www.paypal.com'],
+    exampleIban: 'DE89 3704 0044 0532 0130 00',
 
     linkTitle: 'Check a link',
     linkHint: 'Paste the link. Do NOT open it until you have checked it.',
