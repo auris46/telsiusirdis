@@ -1,0 +1,57 @@
+# Paskelbia „Apsaugą“ viešai per GitHub Pages: https://<vartotojas>.github.io/<saugykla>/apsauga/
+# Vieną kartą įjunkite: Settings → Pages → Build and deployment → Source: „GitHub Actions“.
+name: Apsauga – testai ir paskelbimas
+
+on:
+  push:
+    branches: [main, master]
+    paths: ['apsauga/**', '.github/workflows/apsauga-pages.yml']
+  pull_request:
+    paths: ['apsauga/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Atpažinimo variklio testai
+        run: node --test apsauga/tests/detector.test.js
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Surinkti svetainę
+        run: |
+          mkdir -p _site
+          # Esami saugyklos puslapiai lieka savo vietose
+          find . -maxdepth 1 -type f -name '*.html*' -exec cp {} _site/ \;
+          mkdir -p _site/apsauga
+          cp -R apsauga/. _site/apsauga/
+          rm -rf _site/apsauga/tests _site/apsauga/tools _site/apsauga/dist
+          find _site/apsauga -maxdepth 1 -name '*.md' -delete
+          sh apsauga/tools/package-extension.sh _site/apsauga
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

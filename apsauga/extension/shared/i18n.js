@@ -117,6 +117,15 @@
         'Jei jau paspaudėte ar mokėjote – atidarykite skiltį „Jau paspaudžiau“.'
       ]
     },
+    fbAsk: 'Ar šis įvertinimas teisingas?',
+    fbYes: 'Taip',
+    fbNo: 'Ne',
+    fbIncludeText: 'Pridėti tikrintą tekstą (padeda tobulinti įrankį; neįtraukite asmens duomenų)',
+    fbThanks: 'Ačiū! Atsidarė atsiliepimų forma – ją pateikite ten.',
+    reportTitle: 'Pranešti apie naują sukčių žinutę',
+    reportHint: 'Gavote sukčių žinutę, kurios įrankis neatpažino? Praneškite – taip apsaugosite kitus.',
+    reportBtn: 'Pranešti',
+    extDownload: 'Atsisiųsti plėtinį (.zip)',
     share: 'Pasidalinti rezultatu',
     shareText: 'Patikrinau su „Apsauga“: {verdict}',
     copied: 'Nukopijuota',
@@ -148,9 +157,9 @@
     protExtTitle: 'Kompiuteryje: naršyklės plėtinys „Apsauga“',
     protExtBody: 'Plėtinys automatiškai blokuoja sukčių ir apsimetėlių svetaines, neleidžia įvesti PIN kodo, kortelės CVV ir slaptažodžių įtartinose svetainėse.',
     protExtSteps: [
-      'Atsisiųskite aplanką „extension“ iš šio projekto.',
+      'Atsisiųskite plėtinį mygtuku žemiau ir išpakuokite (unzip).',
       'Chrome / Edge: atidarykite chrome://extensions, įjunkite „Kūrėjo režimas“.',
-      'Spauskite „Įkelti neišpakuotą“ ir pasirinkite aplanką „extension“.',
+      'Spauskite „Įkelti neišpakuotą“ ir pasirinkite išpakuotą aplanką.',
       'Firefox: about:debugging → „Šis Firefox“ → „Įkelti laikiną priedą“ → manifest.json.'
     ],
     protDnsTitle: 'Telefone: blokuojantis DNS (nemokamai, 1 minutė)',
@@ -184,6 +193,7 @@
     ],
     helpCall: 'Skambinti 112',
 
+    privacyLink: 'Privatumo politika',
     footer: 'Nemokamas, atviro kodo įrankis. Rezultatas – patarimas, ne garantija.',
 
     // Plėtinys
@@ -436,6 +446,15 @@
         'If you already clicked or paid – open “I already clicked”.'
       ]
     },
+    fbAsk: 'Was this result correct?',
+    fbYes: 'Yes',
+    fbNo: 'No',
+    fbIncludeText: 'Include the checked text (helps improve the tool; leave out personal data)',
+    fbThanks: 'Thank you! The feedback form has opened – please submit it there.',
+    reportTitle: 'Report a new scam message',
+    reportHint: 'Got a scam message the tool did not catch? Report it to help protect others.',
+    reportBtn: 'Report',
+    extDownload: 'Download the extension (.zip)',
     share: 'Share result',
     shareText: 'Checked with “Apsauga”: {verdict}',
     copied: 'Copied',
@@ -467,9 +486,9 @@
     protExtTitle: 'On a computer: the “Apsauga” browser extension',
     protExtBody: 'The extension automatically blocks scam and impersonation websites and stops you from typing your PIN, card CVV or passwords on suspicious sites.',
     protExtSteps: [
-      'Download the “extension” folder from this project.',
+      'Download the extension with the button below and unzip it.',
       'Chrome / Edge: open chrome://extensions and turn on “Developer mode”.',
-      'Click “Load unpacked” and choose the “extension” folder.',
+      'Click “Load unpacked” and choose the unzipped folder.',
       'Firefox: about:debugging → “This Firefox” → “Load Temporary Add-on” → manifest.json.'
     ],
     protDnsTitle: 'On a phone: blocking DNS (free, 1 minute)',
@@ -503,6 +522,7 @@
     ],
     helpCall: 'Call 112',
 
+    privacyLink: 'Privacy policy',
     footer: 'Free, open-source tool. The result is advice, not a guarantee.',
 
     extBlockedTitle: 'Website blocked',

@@ -1,9 +1,10 @@
 /* Apsauga – leidžia programėlei veikti be interneto */
-const CACHE = 'apsauga-v2';
+const CACHE = 'apsauga-v3';
 const FILES = [
   './',
   './index.html',
   './app.js',
+  './config.js',
   './manifest.webmanifest',
   './extension/shared/i18n.js',
   './extension/shared/detector.js',

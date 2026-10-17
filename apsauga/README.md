@@ -1,5 +1,7 @@
 # Apsauga – sukčių atpažinimo ir blokavimo įrankis
 
+> **MVP:** paleidimo planas, pilotas ir sėkmės rodikliai – [MVP.md](MVP.md). Plėtinio paskelbimas parduotuvėse – [STORE.md](STORE.md). Privatumo politika – [privatumas.html](privatumas.html).
+
 Nemokamas, paprastas įrankis, padedantis per kelias sekundes atpažinti sukčius:
 netikras SMS apie baudas ir siuntas, netikras svetaines, apsimetėlių paskyras,
 įtartinas banko sąskaitas. Veikia lietuvių ir anglų kalbomis (lengva pridėti kitas).

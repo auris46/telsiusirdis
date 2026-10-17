@@ -13,6 +13,23 @@
   let lang = I.pickLang(store.get('apsauga.lang'));
   let T = I.strings[lang];
   const lastResults = {}; // perpiešti pakeitus kalbą
+  const CFG = window.APSAUGA_CONFIG || {};
+  let lastChecked = { text: '' }; // paskutinis tikrintas tekstas – atsiliepimui, jei žmogus leidžia
+
+  // Atsiliepimų forma (Google Forms ar kt.) – žr. config.js
+  function openFeedback(params) {
+    if (!CFG.feedbackUrl) return false;
+    const vals = Object.assign({ type: 'feedback', correct: '', verdict: '', reasons: '', text: '', lang, version: CFG.version || '' }, params);
+    const url = CFG.feedbackUrl.replace(/\{(\w+)\}/g, (_, k) => encodeURIComponent(String(vals[k] == null ? '' : vals[k]).slice(0, 1500)));
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.append(a);
+    a.click();
+    a.remove();
+    return true;
+  }
 
   /* ---------- Šalys ---------- */
   const CALLING = {
@@ -215,6 +232,29 @@
       row.append(help);
     }
     box.append(row);
+
+    if (CFG.feedbackUrl) {
+      const fb = el('div', 'fb');
+      fb.append(el('span', 'q', T.fbAsk));
+      const yes = el('button', 'btn ghost', T.fbYes);
+      const no = el('button', 'btn ghost', T.fbNo);
+      const lab = el('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      lab.append(cb, document.createTextNode(T.fbIncludeText));
+      const send = (correct) => {
+        openFeedback({
+          correct, verdict: res.level,
+          reasons: res.signals.map((x) => x.id).join(','),
+          text: cb.checked ? lastChecked.text : ''
+        });
+        toast(T.fbThanks);
+      };
+      yes.addEventListener('click', () => send('yes'));
+      no.addEventListener('click', () => send('no'));
+      fb.append(yes, no, lab);
+      box.append(fb);
+    }
     if (res.level === 'danger' && navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) navigator.vibrate([80, 60, 80]);
   }
 
@@ -250,6 +290,7 @@
     const home = $('#home').value || guessHome();
     const opts = { sender: $('#sender').value, homeCountryCode: CALLING[home] };
     const res = D.analyzeText($('#msg').value, opts);
+    lastChecked = { text: $('#msg').value };
     const run = () => render('#msgRes', res, linkList(res.urls));
     lastResults.msg = run;
     run();
@@ -287,6 +328,7 @@
     const val = $('#link').value.trim();
     if (!val) return;
     let res = D.analyzeUrl(val);
+    lastChecked = { text: val };
     if (linkAge && res.registrable !== linkAge.reg) linkAge = null;
     if (linkAge && linkAge.days != null) res = D.analyzeUrl(val, { domainAgeDays: linkAge.days });
     const run = () => {
@@ -432,6 +474,18 @@
     await deferredPrompt.userChoice;
     deferredPrompt = null;
     $('#installCard').hidden = true;
+  });
+
+  // Plėtinio archyvas yra tik viešoje (GitHub Pages) versijoje – kitur mygtuką slepiame
+  fetch('apsauga-extension.zip', { method: 'HEAD' })
+    .then((r) => { if (!r.ok) $('#extZip').hidden = true; })
+    .catch(() => { $('#extZip').hidden = true; });
+
+  /* ---------- Pranešimas apie sukčius ---------- */
+  $('#reportCard').hidden = !CFG.feedbackUrl;
+  $('#reportBtn').addEventListener('click', () => {
+    openFeedback({ type: 'report', text: lastChecked.text || $('#msg').value });
+    toast(T.fbThanks);
   });
 
   /* ---------- Paleidimas ---------- */
