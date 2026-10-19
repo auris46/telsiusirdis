@@ -1,5 +1,6 @@
 # Apsauga – sukčių atpažinimo ir blokavimo įrankis
 
+> **Paskelbimas Hostinger:** [HOSTINGER.md](HOSTINGER.md).
 > **MVP:** paleidimo planas, pilotas ir sėkmės rodikliai – [MVP.md](MVP.md). Plėtinio paskelbimas parduotuvėse – [STORE.md](STORE.md). Privatumo politika – [privatumas.html](privatumas.html).
 
 Nemokamas, paprastas įrankis, padedantis per kelias sekundes atpažinti sukčius:

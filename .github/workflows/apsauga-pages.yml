@@ -44,11 +44,7 @@ jobs:
           mkdir -p _site
           # Esami saugyklos puslapiai lieka savo vietose
           find . -maxdepth 1 -type f -name '*.html*' -exec cp {} _site/ \;
-          mkdir -p _site/apsauga
-          cp -R apsauga/. _site/apsauga/
-          rm -rf _site/apsauga/tests _site/apsauga/tools _site/apsauga/dist
-          find _site/apsauga -maxdepth 1 -name '*.md' -delete
-          sh apsauga/tools/package-extension.sh _site/apsauga
+          sh apsauga/tools/build-site.sh _site/apsauga
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
