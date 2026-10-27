@@ -15,7 +15,7 @@ netikras SMS apie baudas ir siuntas, netikras svetaines, apsimetėlių paskyras,
 
 | Skiltis | Ką daro |
 |---|---|
-| **Žinutė / SMS** | Įklijuojate žinutę → gaunate žalią / geltoną / raudoną įvertinimą ir paaiškinimą *kodėl*. Atpažįsta baudų, siuntų, „užblokuotos sąskaitos“, „mama, čia mano naujas numeris“, investicijų, laimėjimų, PIN / Smart-ID kodų prašymus ir kt. (LT, EN, RU, PL, DE šablonai). |
+| **Žinutė / SMS** | **Įkeliate ekrano nuotrauką** (tekstas perskaitomas įrenginyje – OCR, nuorodos liesti nereikia), bendrinate (Android) arba įklijuojate žinutę → gaunate žalią / geltoną / raudoną įvertinimą ir paaiškinimą *kodėl*. Atpažįsta baudų, siuntų, „užblokuotos sąskaitos“, „mama, čia mano naujas numeris“, investicijų, laimėjimų, PIN / Smart-ID kodų prašymus ir kt. (LT, EN, RU, PL, DE šablonai). |
 | **Nuoroda** | Parodo tikrąjį svetainės savininką, atpažįsta apsimetėlių domenus (`swedbank.lt.login.top`, `paypa1.com`, `rnicrosoft.com`), trumpintas nuorodas, IP adresus ir **netikras kitos abėcėlės raides** (`pаypal.com` su kirilicos „а“ – Unicode TR39 principu). **QR kodo skenavimas** (apsauga nuo „quishing“ lipdukų) ir pasirinktinai **domeno amžius** per RDAP (naujos svetainės – stipriausias sukčių požymis). |
 | **Banko sąskaita** | Patikrina IBAN (kontroliniai skaitmenys, ilgis, šalis, Lietuvos bankas) ir įvertina situaciją: „bankas prašo pervesti į saugią sąskaitą“ = sukčiai. |
 | **Paskyra** | Paprastas klausimynas apie Facebook / Instagram / Vinted / pažinčių paskyrą + vardo analizė (`Swedbank_Pagalba_LT`). |
@@ -67,6 +67,8 @@ apsauga/
     content.js                PIN / kortelės laukelių apsauga, ClickFix perspėjimai
     clipguard.js              iškarpinės apsauga (veikia puslapio aplinkoje)
     blocked.*, popup.*        blokavimo puslapis ir meniu
+  ocr.js                      teksto skaitymas iš ekrano nuotraukos (Tesseract, tik įrenginyje)
+  vendor/tesseract/           Tesseract.js 7 (Apache-2.0) + lietuvių / anglų modeliai
   vendor/jsQR.js              QR kodų skaitymas (Apache-2.0), kai naršyklė neturi BarcodeDetector
   tests/detector.test.js      testai
 ```

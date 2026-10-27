@@ -837,7 +837,7 @@
   const api = {
     BRANDS, analyzeUrl, analyzeText, analyzeIban, analyzeProfile, extractUrls, classifyField,
     registrable, officialBrand: (h) => { const b = officialBrand(String(h).toLowerCase()); return b ? b.name : null; },
-    inList, ibanCountries: Object.keys(IBAN_LEN), decodeHost, skeleton, buildFeed, matchFeed, version: '1.1.0'
+    inList, ibanCountries: Object.keys(IBAN_LEN), tlds: Array.from(TEXT_TLDS), decodeHost, skeleton, buildFeed, matchFeed, version: '1.1.0'
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.ScamDetector = api;

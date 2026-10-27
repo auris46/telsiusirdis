@@ -64,22 +64,27 @@
     list('#extSteps', T.protExtSteps);
     list('#golden', T.protRules);
     list('#builtin', T.protBuiltin);
-    const hs = $('#helpSteps');
-    hs.textContent = '';
-    for (const [title, body] of T.helpSteps) {
+    titledList('#helpSteps', T.helpSteps);
+    titledList('#howSteps', T.howSteps);
+    $('#fontBtn').title = T.fontBigger;
+    renderFlags();
+    renderCountries();
+    renderExamples();
+    renderLangButtons();
+    for (const k of Object.keys(lastResults)) lastResults[k]();
+  }
+  function titledList(sel, items) {
+    const box = $(sel);
+    box.textContent = '';
+    for (const [title, body] of items) {
       const li = document.createElement('li');
       const div = document.createElement('div');
       const b = document.createElement('b');
       b.textContent = title;
       div.append(b, document.createTextNode(body));
       li.append(div);
-      hs.append(li);
+      box.append(li);
     }
-    renderFlags();
-    renderCountries();
-    renderExamples();
-    renderLangButtons();
-    for (const k of Object.keys(lastResults)) lastResults[k]();
   }
   function list(sel, items) {
     const el = $(sel);
@@ -223,6 +228,11 @@
     box.append(ol);
 
     const row = el('div', 'row');
+    if ('speechSynthesis' in window) {
+      const speak = el('button', 'btn ghost', T.readAloud);
+      speak.addEventListener('click', () => readAloud(res, speak));
+      row.append(speak);
+    }
     const share = el('button', 'btn ghost', T.share);
     share.addEventListener('click', () => shareResult(res));
     row.append(share);
@@ -258,6 +268,23 @@
     if (res.level === 'danger' && navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) navigator.vibrate([80, 60, 80]);
   }
 
+  // Rezultato perskaitymas balsu – patogu prastai matantiems
+  function readAloud(res, btn) {
+    const synth = window.speechSynthesis;
+    if (synth.speaking) { synth.cancel(); btn.textContent = T.readAloud; return; }
+    const parts = [T.verdict[res.level], T.verdictSub[res.level]]
+      .concat(res.signals.filter((s) => s.w > 0).slice(0, 3).map((s) => I.signalText(lang, s)))
+      .concat(T.advice[res.level].slice(0, 2));
+    const u = new SpeechSynthesisUtterance(parts.join('. ').replace(/[„“”"]/g, ''));
+    u.lang = lang === 'lt' ? 'lt-LT' : 'en-GB';
+    const v = synth.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith(lang));
+    if (v) u.voice = v;
+    u.rate = 0.92;
+    u.onend = u.onerror = () => { btn.textContent = T.readAloud; };
+    btn.textContent = T.stopReading;
+    synth.speak(u);
+  }
+
   async function shareResult(res) {
     const lines = [I.fmt(T.shareText, { verdict: T.verdict[res.level] })]
       .concat(res.signals.filter((s) => s.w > 0).slice(0, 4).map((s) => '• ' + I.signalText(lang, s)));
@@ -275,11 +302,20 @@
     setTimeout(() => t.remove(), 2200);
   }
 
-  async function pasteInto(field) {
+  async function pasteInto(field, allowImage) {
     try {
       const txt = await navigator.clipboard.readText();
       if (txt) { field.value = txt; return true; }
     } catch (e) { /* neleidžiama */ }
+    // Iškarpinėje gali būti ekrano nuotrauka
+    if (allowImage && navigator.clipboard && navigator.clipboard.read) {
+      try {
+        for (const item of await navigator.clipboard.read()) {
+          const type = item.types.find((t) => t.startsWith('image/'));
+          if (type) { handleImage(await item.getType(type)); return false; }
+        }
+      } catch (e) { /* neleidžiama */ }
+    }
     toast(T.pasteDenied);
     field.focus();
     return false;
@@ -289,9 +325,24 @@
   function checkMsg() {
     const home = $('#home').value || guessHome();
     const opts = { sender: $('#sender').value, homeCountryCode: CALLING[home] };
-    const res = D.analyzeText($('#msg').value, opts);
-    lastChecked = { text: $('#msg').value };
-    const run = () => render('#msgRes', res, linkList(res.urls));
+    const text = $('#msg').value;
+    const res = D.analyzeText(text, opts);
+    lastChecked = { text };
+    // Banko sąskaita žinutėje (pvz. „pervesk į LT12 …“)
+    const ibans = (text.toUpperCase().match(/\b[A-Z]{2}\d{2}(?:[ -]?[A-Z0-9]{4}){2,7}(?:[ -]?[A-Z0-9]{1,4})?\b/g) || [])
+      .map((x) => D.analyzeIban(x)).filter((r) => r.info.country && D.ibanCountries.includes(r.info.country));
+    const run = () => {
+      const wrap = el('div');
+      const links = linkList(res.urls);
+      if (links) wrap.append(links);
+      for (const r of ibans) {
+        const box = el('div', 'iban-found');
+        box.append(el('b', null, T.ibanFound + ' '), document.createTextNode(r.info.formatted + ' – ' +
+          (r.info.bank ? r.info.bank + ', ' : '') + r.info.country + ', ' + (r.info.valid ? T.ibanOk : T.ibanBad)));
+        wrap.append(box);
+      }
+      render('#msgRes', res, wrap.childNodes.length ? wrap : null);
+    };
     lastResults.msg = run;
     run();
   }
@@ -299,7 +350,14 @@
     if (!urls || !urls.length) return null;
     const wrap = el('div');
     for (const u of urls) wrap.append(urlBox(u));
+    wrap.append(safeNote());
     return wrap;
+  }
+  function safeNote() {
+    const p = el('p', 'safe');
+    p.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+    p.append(document.createTextNode(T.safeNote));
+    return p;
   }
   function urlBox(u) {
     const box = el('div', 'urlbox');
@@ -318,8 +376,84 @@
     return box;
   }
   $('#msgCheck').addEventListener('click', checkMsg);
-  $('#msgPaste').addEventListener('click', async () => { if (await pasteInto($('#msg'))) checkMsg(); });
-  $('#msgClear').addEventListener('click', () => { $('#msg').value = ''; $('#sender').value = ''; $('#msgRes').textContent = ''; delete lastResults.msg; $('#msg').focus(); });
+  $('#msgPaste').addEventListener('click', async () => { if (await pasteInto($('#msg'), true)) { checkMsg(); showResult('#msgRes'); } });
+  // Parodome rezultatą iškart – nereikia slinkti žemyn
+  function showResult(sel) {
+    const r = $(sel);
+    if (!r.firstChild) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    r.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  /* ---------- Ekrano nuotrauka: QR kodas arba teksto skaitymas (OCR) ---------- */
+  let ocrBusy = false;
+  function ocrStatus(text, pct) {
+    const box = $('#ocrStatus');
+    box.hidden = !text;
+    $('#ocrText').textContent = text || '';
+    $('#ocrBar').style.width = (pct == null ? 4 : Math.max(4, pct)) + '%';
+  }
+  async function handleImage(file) {
+    if (!file || ocrBusy) return;
+    ocrBusy = true;
+    showTab('msg');
+    $('#msgRes').textContent = '';
+    try {
+      // 1) QR kodas nuotraukoje
+      let qr = null;
+      try { qr = await decodeQr(file); } catch (e) { qr = null; }
+      if (qr) { toast(T.qrFound); routeQr(qr); showResult('#linkRes'); return; }
+      // 2) Teksto skaitymas
+      ocrStatus(T.ocrLoading, 4);
+      const text = await window.ApsaugaOCR.read(file, (m) => {
+        if (m.status === 'recognizing text') {
+          const p = Math.round((m.progress || 0) * 100);
+          ocrStatus(I.fmt(T.ocrReading, { p }), p);
+        }
+      }, D.tlds);
+      if (!text) { ocrStatus(''); toast(T.ocrNone); return; }
+      $('#msg').value = text;
+      // Siuntėjo numeris ekrano viršuje (jei laukelis tuščias)
+      const num = /^[^\n]{0,20}?(\+?\d[\d ]{7,16}\d)/m.exec(text.split('\n').slice(0, 2).join('\n'));
+      if (num && !$('#sender').value) $('#sender').value = num[1].replace(/\s+/g, ' ');
+      checkMsg();
+      ocrStatus(T.ocrDone, 100);
+      showResult('#msgRes');
+    } catch (e) {
+      ocrStatus('');
+      toast(T.ocrFail);
+    } finally {
+      ocrBusy = false;
+    }
+  }
+  $('#shotFile').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (f) handleImage(f);
+  });
+  // Ctrl+V su nuotrauka bet kurioje vietoje
+  document.addEventListener('paste', (e) => {
+    const files = Array.from((e.clipboardData && e.clipboardData.files) || []);
+    const img = files.find((f) => f.type.startsWith('image/'));
+    if (img) { e.preventDefault(); handleImage(img); }
+  });
+  // Nutempimas
+  const drop = $('#drop');
+  const panel = $('#p-msg');
+  panel.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  panel.addEventListener('dragleave', (e) => { if (!panel.contains(e.relatedTarget)) drop.classList.remove('over'); });
+  panel.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('over');
+    const dt = e.dataTransfer;
+    const img = Array.from(dt.files || []).find((f) => f.type.startsWith('image/'));
+    if (img) { handleImage(img); return; }
+    const txt = dt.getData('text/plain');
+    if (txt) { $('#msg').value = txt; checkMsg(); }
+  });
+  // Pirmas paspaudimas ant mygtuko – iš anksto paruošiame skaitymą
+  $('#drop').addEventListener('pointerenter', () => window.ApsaugaOCR && window.ApsaugaOCR.warmUp(), { once: true });
+  $('#msgClear').addEventListener('click', () => { $('#msg').value = ''; $('#sender').value = ''; $('#msgRes').textContent = ''; ocrStatus(''); delete lastResults.msg; $('#msg').focus(); });
   $('#msg').addEventListener('paste', () => setTimeout(checkMsg, 0));
 
   /* ---------- Nuoroda ---------- */
@@ -332,7 +466,9 @@
     if (linkAge && res.registrable !== linkAge.reg) linkAge = null;
     if (linkAge && linkAge.days != null) res = D.analyzeUrl(val, { domainAgeDays: linkAge.days });
     const run = () => {
-      render('#linkRes', res, res.valid ? urlBox(res) : null);
+      let extra = null;
+      if (res.valid) { extra = el('div'); extra.append(urlBox(res), safeNote()); }
+      render('#linkRes', res, extra);
       const canAge = res.valid && !res.official && /[a-z]/i.test(res.registrable || '') && !/^\d+(\.\d+){3}$/.test(res.host);
       $('#ageBox').hidden = !canAge;
       $('#ageRes').textContent = !linkAge ? '' : linkAge.days == null ? T.ageUnknown
@@ -404,9 +540,13 @@
     let data = null;
     try { data = await decodeQr(file); } catch (err) { data = null; }
     if (!data) { toast(T.qrNone); return; }
+    routeQr(data);
+  });
+  function routeQr(data) {
     if (/^(https?:\/\/|www\.)/i.test(data.trim()) || /^[a-z0-9.-]+\.[a-z]{2,}(\/|$)/i.test(data.trim())) {
       $('#link').value = data.trim();
       linkAge = null;
+      showTab('link');
       checkLink();
     } else {
       // Ne nuoroda (pvz. SMS, tekstas, mokėjimo duomenys) – tikriname kaip žinutę
@@ -414,7 +554,7 @@
       showTab('msg', true);
       checkMsg();
     }
-  });
+  }
   $('#linkCheck').addEventListener('click', checkLink);
   $('#link').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkLink(); });
   $('#link').addEventListener('input', () => { linkAge = null; });
@@ -488,13 +628,32 @@
     toast(T.fbThanks);
   });
 
+  /* ---------- Didesnis šriftas ---------- */
+  function setBig(on) {
+    if (on) document.documentElement.setAttribute('data-size', 'big');
+    else document.documentElement.removeAttribute('data-size');
+    $('#fontBtn').setAttribute('aria-pressed', String(on));
+    store.set('apsauga.big', on ? '1' : '');
+  }
+  $('#fontBtn').addEventListener('click', () => setBig(!document.documentElement.hasAttribute('data-size')));
+  setBig(store.get('apsauga.big') === '1');
+
   /* ---------- Paleidimas ---------- */
   applyI18n();
   const params = new URLSearchParams(location.search);
   // „Bendrinti“ iš kitos programėlės (Android) arba nuoroda ?text=…
   const shared = [params.get('title'), params.get('text'), params.get('url')].filter(Boolean).join('\n');
   const fromHash = Object.keys(TAB_HASH).find((k) => TAB_HASH[k] === location.hash.slice(1));
-  if (shared) {
+  if (params.get('image') && 'caches' in window) {
+    // Android: ekrano nuotrauka pasidalinta su „Apsauga“ (ją išsaugojo sw.js)
+    showTab('msg');
+    history.replaceState(null, '', location.pathname + '#zinute');
+    caches.open('apsauga-share').then(async (c) => {
+      const r = await c.match('shared-image');
+      await c.delete('shared-image');
+      if (r) handleImage(await r.blob());
+    }).catch(() => {});
+  } else if (shared) {
     $('#msg').value = shared;
     showTab('msg');
     checkMsg();

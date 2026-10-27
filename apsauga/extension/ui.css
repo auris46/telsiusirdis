@@ -51,3 +51,10 @@ h2{font-size:15px;margin:14px 0 6px}
 .list li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;word-break:break-all}
 textarea{width:100%;min-height:80px;font:inherit;font-size:14px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink);padding:8px}
 details summary{cursor:pointer;font-weight:700;margin-top:12px}
+
+/* Patikros langas (dešinysis pelės klavišas) */
+body.check{padding:16px}
+.check-wrap{max-width:520px;margin:0 auto;font-size:17px}
+.check-wrap .v{font-size:20px}
+.check-wrap h2{font-size:16px;margin:14px 0 4px}
+.check-wrap .addr{margin-top:12px}

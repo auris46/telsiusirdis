@@ -118,7 +118,24 @@ chrome.webNavigation.onBeforeNavigate.addListener(onNav);
 // Galutinis adresas po peradresavimų (trumpintos nuorodos, „tracking“ grandinės)
 chrome.webNavigation.onCommitted.addListener(onNav);
 
+/* Dešinysis pelės klavišas: „Patikrinti su Apsauga“ – nuoroda neatidaroma */
+function createMenus() {
+  const T = ApsaugaI18n.strings[ApsaugaI18n.pickLang()];
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: 'apsauga-link', title: T.extMenuLink, contexts: ['link'] });
+    chrome.contextMenus.create({ id: 'apsauga-text', title: T.extMenuText, contexts: ['selection'] });
+  });
+}
+chrome.contextMenus.onClicked.addListener((info) => {
+  const q = info.menuItemId === 'apsauga-link'
+    ? 'u=' + encodeURIComponent(info.linkUrl || '')
+    : 't=' + encodeURIComponent((info.selectionText || '').slice(0, 5000));
+  chrome.windows.create({ url: chrome.runtime.getURL('check.html?' + q), type: 'popup', width: 520, height: 640 });
+});
+chrome.runtime.onStartup.addListener(createMenus);
+
 chrome.runtime.onInstalled.addListener(async () => {
+  createMenus();
   const r = await chrome.storage.local.get('settings');
   if (!r.settings) await chrome.storage.local.set({ settings: DEFAULT_SETTINGS, trusted: [], blocked: [] });
   chrome.alarms.create('feed', { periodInMinutes: 24 * 60, delayInMinutes: 1 });

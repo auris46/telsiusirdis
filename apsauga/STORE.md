@@ -29,6 +29,7 @@ Apsauga saugo jus ir jūsų artimuosius nuo internetinių sukčių.
 • Neleidžia įvesti kortelės PIN kodo jokioje svetainėje – PIN įvedamas tik bankomate.
 • Įtartinose ir naujai sukurtose svetainėse užrakina kortelės, CVV, SMS kodų ir slaptažodžių laukelius.
 • Sustabdo „ClickFix“ – netikrą „Aš ne robotas“ patikrą, kuri liepia paspausti Windows + R ir įklijuoti virusą.
+• Dešinysis pelės klavišas ant nuorodos → „Patikrinti su Apsauga“ – nuoroda patikrinama jos neatidarant.
 • Meniu galima patikrinti įtartiną žinutę.
 
 Privatumas: viskas tikrinama jūsų kompiuteryje. Jokių slapukų, reklamos ar sekimo. Atviras kodas.
@@ -41,6 +42,7 @@ Apsauga protects you and your family from online scams.
 • Never lets you type your card PIN on a website – a PIN belongs only at an ATM.
 • Locks card, CVV, SMS-code and password fields on suspicious and newly created websites.
 • Stops “ClickFix” – fake “I am not a robot” checks that tell you to press Windows + R and paste malware.
+• Right-click a link → “Check with Apsauga” – the link is checked without opening it.
 • Check a suspicious message right from the menu.
 
 Privacy: everything is analysed on your computer. No cookies, ads or tracking. Open source.
@@ -56,6 +58,7 @@ Privacy & Security / Saugumas
 | `tabs` | Nukreipti skirtuką į blokavimo puslapį ir meniu parodyti dabartinės svetainės įvertinimą. |
 | `storage`, `unlimitedStorage` | Laikyti nustatymus, patikimų / užblokuotų svetainių sąrašus ir ~10 MB sukčių svetainių sąrašą įrenginyje. |
 | `alarms` | Kartą per parą atnaujinti sukčių svetainių sąrašą. |
+| `contextMenus` | Dešiniojo pelės klavišo meniu „Patikrinti nuorodą su Apsauga“ – nuoroda patikrinama jos neatidarant. |
 | Nuotolinis kodas | Nenaudojamas. Visas kodas yra pakete. |
 
 ### Duomenų naudojimo deklaracija
