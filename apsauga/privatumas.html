@@ -20,12 +20,12 @@ a{color:var(--lake)}
 <body>
 <main>
   <h1>Apsauga – privatumo politika</h1>
-  <p class="muted">Galioja tinklapiui, telefono programėlei ir naršyklės plėtiniui „Apsauga“. Atnaujinta 2026-10-27.</p>
+  <p class="muted">Galioja tinklapiui, telefono programėlei ir naršyklės plėtiniui „Apsauga“. Atnaujinta 2026-10-29.</p>
 
   <section lang="lt">
     <h2>Trumpai</h2>
     <ul>
-      <li><b>Jūsų žinutės, nuorodos ir sąskaitų numeriai tikrinami tik jūsų įrenginyje.</b> Jie niekur nesiunčiami ir nesaugomi.</li>
+      <li><b>Jūsų žinutės, nuorodos ir sąskaitų numeriai tikrinami jūsų įrenginyje.</b> Jie niekur nesiunčiami ir nesaugomi – išskyrus atvejį, kai patys pasirenkate DI eksperto patikrą (žr. žemiau).</li>
       <li>Nenaudojame slapukų, reklamos, analitikos ar sekimo.</li>
       <li>Neprašome ir nekaupiame vardo, el. pašto ar kitų asmens duomenų.</li>
       <li><b>Ekrano nuotraukos</b> perskaitomos (OCR) jūsų įrenginyje – nuotrauka niekur neįkeliama ir neišsaugoma.</li>
@@ -34,6 +34,9 @@ a{color:var(--lake)}
     <ul>
       <li><b>Sukčių svetainių sąrašai.</b> Plėtinys kartą per parą atsisiunčia viešus sąrašus (Phishing.Database, OpenPhish) iš GitHub. Jokie jūsų duomenys kartu nesiunčiami. Funkciją galima išjungti plėtinio meniu.</li>
       <li><b>Domeno amžius.</b> Kai svetainė prašo slaptažodžio ar kortelės duomenų, plėtinys gali paklausti viešo registro rdap.org, kada užregistruotas domenas. Siunčiamas tik domeno pavadinimas (pvz. „pavyzdys.lt“), ne visas adresas. Tinklapyje tai daroma tik paspaudus mygtuką. Plėtinyje funkciją galima išjungti.</li>
+      <li><b>Sukčių svetainių patikra.</b> Kai tikrinate nuorodą, telefonas apskaičiuoja adreso „pirštų atspaudą“ (SHA-256) ir iš mūsų svetainės atsisiunčia vieną iš 4096 mažų sąrašo failų pagal pirmus 3 atspaudo simbolius. Palyginimas vyksta jūsų įrenginyje – mes nesužinome, kokį adresą tikrinote.</li>
+      <li><b>DI eksperto patikra (Apsauga Plius) – tik jums paspaudus ir sutikus.</b> Tikrinamas tekstas siunčiamas į mūsų serverį ir dirbtinio intelekto paslaugai Anthropic Claude. Mes jo neišsaugome. Mėnesio nemokamų patikrų skaičiavimui saugome tik nuo IP adreso apskaičiuotą atspaudą (ne patį adresą), o Plius kodus – tik kaip atspaudus.</li>
+      <li><b>Apmokėjimai ir parama</b> vyksta mokėjimo platformose (pvz. Stripe, PayPal). Kortelės duomenų mes negauname ir nesaugome. Po apmokėjimo Stripe patikriname tik, ar mokėjimas įvykdytas, ir išduodame kodą.</li>
       <li><b>Atsiliepimai.</b> Jei paspaudžiate „Ar įvertinimas teisingas?“ ar „Pranešti“, atsidaro atsiliepimų forma. Joje bus įvertinimas ir požymių kodai. Tikrintas tekstas įtraukiamas tik jums pačiam pažymėjus. Formą pateikiate patys.</li>
     </ul>
     <h2>Kas saugoma įrenginyje</h2>
@@ -53,6 +56,9 @@ a{color:var(--lake)}
       <li>Messages, links, account numbers and <b>screenshots</b> are analysed <b>only on your device</b>. They are never sent or stored anywhere.</li>
       <li>No cookies, ads, analytics or tracking. No personal data is collected.</li>
       <li>The extension downloads public scam-site lists once a day (no user data is sent) and may ask the public registry rdap.org for a domain's registration date (only the domain name is sent). Both can be turned off.</li>
+      <li>Link checks against our scam-site database use hash prefixes (k-anonymity): your device downloads one of 4096 small files and compares locally, so we never learn which address you checked.</li>
+      <li>The AI expert check (Apsauga Plus) runs only when you press it and agree: the text is sent to our server and to Anthropic Claude for analysis and is not stored. For free monthly quotas we keep only a hash of your IP address.</li>
+      <li>Payments and donations are handled by payment platforms (e.g. Stripe, PayPal); we never receive your card details.</li>
       <li>Feedback opens a form you submit yourself. The checked text is included only if you tick the box.</li>
     </ul>
   </section>

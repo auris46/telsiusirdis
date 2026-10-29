@@ -147,6 +147,46 @@
     reportHint: 'Gavote sukčių žinutę, kurios įrankis neatpažino? Praneškite – taip apsaugosite kitus.',
     reportBtn: 'Pranešti',
     extDownload: 'Atsisiųsti plėtinį (.zip)',
+    supTitle: 'Apsauga nemokama visiems',
+    supBody: 'Sukčiai tobulėja kasdien – todėl ir „Apsauga“ atnaujinama nuolat. Jei įrankis jums padėjo, galite paremti jo kūrimą.',
+    supSafe: 'Parama priimama tik per patikimas mokėjimo platformas. Šioje svetainėje niekada neprašome kortelės duomenų.',
+    supBank: 'Bankiniu pavedimu',
+    supCopy: 'Kopijuoti',
+    supName: 'Gavėjas',
+    supPurpose: 'Paskirtis',
+    plusTitle: 'Apsauga Plius – DI eksperto patikra',
+    plusBody: 'Kai neaišku, ar tai sukčiai, dirbtinis intelektas išsamiai išnagrinėja žinutę ir paprastais žodžiais paaiškina, ką daryti. Pagrindinė apsauga visada lieka nemokama.',
+    plusFree: 'Nemokamų DI patikrų šį mėnesį liko: {n} iš {total}.',
+    plusCredits: 'Jūsų Plius kode liko patikrų: {n}.',
+    plusCode: 'Turite Plius kodą?',
+    plusCodePh: 'APS-XXXX-XXXX-XXXX',
+    plusActivate: 'Aktyvuoti',
+    plusBadCode: 'Kodas nerastas. Patikrinkite, ar įvedėte teisingai.',
+    plusSaved: 'Plius kodas aktyvuotas.',
+    plusPaidTitle: 'Ačiū už pirkimą! Jūsų Plius kodas:',
+    plusPaidSave: 'Išsisaugokite jį – su juo galėsite naudotis ir kitame įrenginyje.',
+    plusPaidFail: 'Nepavyko patvirtinti apmokėjimo. Jei pinigai nuskaityti – parašykite mums, kodą atsiųsime.',
+    expertBtn: 'Paklausti DI eksperto',
+    expertConsent: 'Tikrinamas tekstas bus išsiųstas į mūsų serverį ir dirbtinio intelekto paslaugai (Anthropic Claude) analizei. Jis niekur neišsaugomas. Neįtraukite slaptažodžių ar kodų.',
+    expertSend: 'Siųsti analizei',
+    expertCancel: 'Atšaukti',
+    expertWorking: 'DI ekspertas nagrinėja… (iki 30 sekundžių)',
+    expertTitle: 'DI eksperto nuomonė',
+    expertVerdict: { safe: 'Greičiausiai saugu', suspicious: 'Įtartina', scam: 'Sukčiai' },
+    expertConfidence: { low: 'mažas tikrumas', medium: 'vidutinis tikrumas', high: 'didelis tikrumas' },
+    expertFlags: 'Pavojaus ženklai:',
+    expertTodo: 'Ką daryti:',
+    expertNote: 'DI gali klysti. Jei abejojate – paskambinkite įmonei ar artimajam patys, jums žinomu numeriu.',
+    expertErr: {
+      quota: 'Nemokamos šio mėnesio DI patikros išnaudotos. Įsigykite Apsauga Plius arba palaukite kito mėnesio.',
+      busy: 'Šiuo metu per daug užklausų. Pabandykite vėliau.',
+      slow_down: 'Per daug užklausų iš eilės. Palaukite kelias minutes.',
+      refused: 'DI atsisakė vertinti šį tekstą. Vadovaukitės įprastu rezultatu.',
+      other: 'Nepavyko gauti DI atsakymo. Pabandykite vėliau.'
+    },
+    updatedLine: 'Apsaugos duomenys atnaujinti {date}: {n} žinomų sukčių svetainių, taisyklės {v}.',
+    newsTitle: 'Apsauga atnaujinta – nauja:',
+    newsClose: 'Supratau',
     share: 'Pasidalinti rezultatu',
     shareText: 'Patikrinau su „Apsauga“: {verdict}',
     copied: 'Nukopijuota',
@@ -500,6 +540,46 @@
     reportHint: 'Got a scam message the tool did not catch? Report it to help protect others.',
     reportBtn: 'Report',
     extDownload: 'Download the extension (.zip)',
+    supTitle: 'Apsauga is free for everyone',
+    supBody: 'Scammers get smarter every day – so Apsauga is updated constantly. If the tool helped you, you can support its development.',
+    supSafe: 'Support is accepted only through trusted payment platforms. This website never asks for your card details.',
+    supBank: 'By bank transfer',
+    supCopy: 'Copy',
+    supName: 'Recipient',
+    supPurpose: 'Reference',
+    plusTitle: 'Apsauga Plus – AI expert check',
+    plusBody: 'When it is unclear whether something is a scam, artificial intelligence examines the message in depth and explains in plain words what to do. Basic protection always stays free.',
+    plusFree: 'Free AI checks left this month: {n} of {total}.',
+    plusCredits: 'Checks left on your Plus code: {n}.',
+    plusCode: 'Have a Plus code?',
+    plusCodePh: 'APS-XXXX-XXXX-XXXX',
+    plusActivate: 'Activate',
+    plusBadCode: 'Code not found. Please check it was typed correctly.',
+    plusSaved: 'Plus code activated.',
+    plusPaidTitle: 'Thank you for your purchase! Your Plus code:',
+    plusPaidSave: 'Keep it safe – you can use it on another device too.',
+    plusPaidFail: 'Could not confirm the payment. If you were charged, write to us and we will send your code.',
+    expertBtn: 'Ask the AI expert',
+    expertConsent: 'The checked text will be sent to our server and to an AI service (Anthropic Claude) for analysis. It is not stored anywhere. Do not include passwords or codes.',
+    expertSend: 'Send for analysis',
+    expertCancel: 'Cancel',
+    expertWorking: 'The AI expert is analysing… (up to 30 seconds)',
+    expertTitle: 'AI expert opinion',
+    expertVerdict: { safe: 'Probably safe', suspicious: 'Suspicious', scam: 'Scam' },
+    expertConfidence: { low: 'low confidence', medium: 'medium confidence', high: 'high confidence' },
+    expertFlags: 'Warning signs:',
+    expertTodo: 'What to do:',
+    expertNote: 'AI can make mistakes. If in doubt, call the company or your relative yourself, on a number you know.',
+    expertErr: {
+      quota: 'This month’s free AI checks are used up. Get Apsauga Plus or wait for next month.',
+      busy: 'Too many requests right now. Please try later.',
+      slow_down: 'Too many requests in a row. Please wait a few minutes.',
+      refused: 'The AI declined to assess this text. Follow the standard result.',
+      other: 'Could not get an AI answer. Please try later.'
+    },
+    updatedLine: 'Protection data updated {date}: {n} known scam websites, rules {v}.',
+    newsTitle: 'Apsauga was updated – what is new:',
+    newsClose: 'Got it',
     share: 'Share result',
     shareText: 'Checked with “Apsauga”: {verdict}',
     copied: 'Copied',
@@ -731,7 +811,19 @@
     return fmt(dict[sig.id] || en.sig[sig.id] || sig.id, sig.p);
   }
 
-  const api = { strings, pickLang, fmt, signalText };
+  // Naujų taisyklių tekstai ateina kartu su rules.json
+  function addSignalTexts(id, texts) {
+    if (!texts) return;
+    for (const lang of Object.keys(strings)) {
+      const t = texts[lang] || texts.en;
+      if (typeof t === 'string' && !strings[lang].sig[id]) strings[lang].sig[id] = t.slice(0, 300);
+    }
+  }
+  function addRuleTexts(r) {
+    for (const t of (r && r.textRules) || []) if (t && t.id) addSignalTexts('t_' + t.id, t.text);
+  }
+
+  const api = { strings, pickLang, fmt, signalText, addSignalTexts, addRuleTexts };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.ApsaugaI18n = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -8,6 +8,15 @@
   const $ = (id) => document.getElementById(id);
   document.documentElement.lang = lang;
 
+  // Naujausios sukčių schemų taisyklės (įdiegtos + atsisiųstos)
+  await (async () => {
+    try {
+      const b = await (await fetch(chrome.runtime.getURL('shared/rules.json'))).json();
+      D.addRules(b); I.addRuleTexts(b);
+      const r = await chrome.storage.local.get('rulesJson');
+      if (r.rulesJson) { D.addRules(r.rulesJson); I.addRuleTexts(r.rulesJson); }
+    } catch (e) { /* - */ }
+  })();
   const q = new URLSearchParams(location.search);
   const url = q.get('u');
   const text = q.get('t');

@@ -9,6 +9,44 @@ const FEEDS = [
   'https://raw.githubusercontent.com/openphish/public_feed/refs/heads/main/feed.txt'
 ];
 const DEFAULT_SETTINGS = { enabled: true, strict: true, feed: true, rdap: true };
+// Naujų sukčių schemų taisyklės (rules.json). Pirmas pasiekiamas šaltinis laimi.
+// Paskelbus svetainę, įrašykite jos adresą pirmoje vietoje, pvz. 'https://patikrink.lt/extension/shared/rules.json'
+const RULES_URLS = [
+  'https://raw.githubusercontent.com/auris46/telsiusirdis/main/apsauga/extension/shared/rules.json'
+];
+
+// Taisyklės: įdiegtos kartu su plėtiniu + naujausios atsisiųstos
+async function applyRules() {
+  let bundled = null;
+  try {
+    bundled = await (await fetch(chrome.runtime.getURL('shared/rules.json'))).json();
+    ScamDetector.addRules(bundled);
+    ApsaugaI18n.addRuleTexts(bundled);
+  } catch (e) { /* - */ }
+  const r = await chrome.storage.local.get('rulesJson');
+  if (r.rulesJson) { ScamDetector.addRules(r.rulesJson); ApsaugaI18n.addRuleTexts(r.rulesJson); }
+  // Turinio skriptai taisykles skaito iš saugyklos – ten visada laikome naujausią versiją
+  if (bundled && (!r.rulesJson || String(r.rulesJson.version) < String(bundled.version))) {
+    await chrome.storage.local.set({ rulesJson: bundled });
+  }
+}
+const rulesReady = applyRules();
+
+async function updateRules() {
+  for (const url of RULES_URLS) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (!json || !json.version) continue;
+      await chrome.storage.local.set({ rulesJson: json, rulesUpdated: Date.now() });
+      ScamDetector.addRules(json);
+      ApsaugaI18n.addRuleTexts(json);
+      return json.version;
+    } catch (e) { /* bandome kitą šaltinį */ }
+  }
+  return null;
+}
 const BLOCK_MIN_SCORE = 60; // naršant blokuojame tik tikrai pavojingas (≥60) – kad netrukdytume be reikalo
 const AGE_TTL = 7 * 864e5;
 
@@ -95,6 +133,7 @@ async function verdictFor(url) {
   if (isPrivateHost(host)) return null;
   const st = await getState();
   if (!st.settings.enabled) return null;
+  await rulesReady;
   if (ScamDetector.inList(host, st.trusted) || st.bypass.includes(host)) return null;
   if (ScamDetector.inList(host, st.blocked)) return { reason: 'user', host };
   if (ScamDetector.officialBrand(host)) return null;
@@ -136,6 +175,7 @@ chrome.runtime.onStartup.addListener(createMenus);
 
 chrome.runtime.onInstalled.addListener(async () => {
   createMenus();
+  updateRules().catch(() => {});
   const r = await chrome.storage.local.get('settings');
   if (!r.settings) await chrome.storage.local.set({ settings: DEFAULT_SETTINGS, trusted: [], blocked: [] });
   chrome.alarms.create('feed', { periodInMinutes: 24 * 60, delayInMinutes: 1 });
@@ -144,6 +184,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.alarms.onAlarm.addListener(async (a) => {
   if (a.name !== 'feed') return;
   const st = await getState();
+  updateRules().catch(() => { /* bandysime rytoj */ });
   if (st.settings.feed) updateFeed().catch(() => { /* bandysime rytoj */ });
 });
 

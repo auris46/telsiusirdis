@@ -71,6 +71,7 @@
     renderCountries();
     renderExamples();
     renderLangButtons();
+    if (typeof renderSupport === 'function' && plus) { renderSupport(); renderDbStatus(); }
     for (const k of Object.keys(lastResults)) lastResults[k]();
   }
   function titledList(sel, items) {
@@ -189,10 +190,12 @@
     return e;
   }
 
+  let lastSignals = [];
   function render(target, res, extra) {
     const box = $(target);
     box.textContent = '';
     if (!res || res.level === 'none') return;
+    lastSignals = res.signals.map((x) => x.id);
     const v = el('div', 'verdict ' + res.level);
     v.innerHTML = ICONS[res.level];
     const txt = el('div');
@@ -236,6 +239,11 @@
     const share = el('button', 'btn ghost', T.share);
     share.addEventListener('click', () => shareResult(res));
     row.append(share);
+    if (plus.expert && lastChecked.text) {
+      const ask = el('button', 'btn ghost', T.expertBtn);
+      ask.addEventListener('click', () => expertConsent(box, ask));
+      row.append(ask);
+    }
     if (res.level !== 'ok') {
       const help = el('button', 'btn ghost', T.tabHelp);
       help.addEventListener('click', () => showTab('help', true));
@@ -343,6 +351,7 @@
       }
       render('#msgRes', res, wrap.childNodes.length ? wrap : null);
     };
+    enrichDb(res, res.urls, 'msg');
     lastResults.msg = run;
     run();
   }
@@ -476,6 +485,7 @@
     };
     lastResults.link = run;
     run();
+    enrichDb(res, [res], 'link');
   }
 
   // Domeno amžius per RDAP (oficialus WHOIS įpėdinis). Siunčiamas tik domeno pavadinimas.
@@ -567,6 +577,7 @@
     const home = $('#home').value;
     if (home) store.set('apsauga.home', home);
     const res = D.analyzeIban($('#iban').value, { who: $('#who').value, homeCountry: home });
+    lastChecked = { text: 'IBAN: ' + $('#iban').value + ($('#who').value ? ' (' + $('#who').selectedOptions[0].textContent + ')' : '') };
     const run = () => {
       const dl = el('dl', 'kv');
       let names = null;
@@ -592,6 +603,7 @@
     const text = $('#profText').value;
     if (!flags.length && !name.trim() && !text.trim()) return;
     const res = D.analyzeProfile({ flags, name, text });
+    lastChecked = { text: [name && 'Profile: ' + name, flags.length && 'Flags: ' + flags.map((f) => T.flags[f]).join('; '), text].filter(Boolean).join('\n') };
     const run = () => render('#profRes', res, linkList(res.urls));
     lastResults.prof = run;
     run();
@@ -638,6 +650,246 @@
   $('#fontBtn').addEventListener('click', () => setBig(!document.documentElement.hasAttribute('data-size')));
   setBig(store.get('apsauga.big') === '1');
 
+
+  /* ---------- Sukčių svetainių duomenų bazė (atnaujinama kasdien) ---------- */
+  function enrichDb(res, urls, key) {
+    const DB = window.ApsaugaThreatDB;
+    if (!DB || !urls || !urls.length) return;
+    const stamp = lastChecked.text;
+    Promise.all(urls.filter((u) => u && u.valid !== false && u.href).map(async (u) => {
+      if (u.signals.some((x) => x.id === 'url_blocklisted')) return false;
+      if (!(await DB.check(u.href, D))) return false;
+      u.signals.push({ id: 'url_blocklisted', w: 100, critical: true, p: { host: u.host } });
+      D.finalize(u);
+      return u;
+    })).then((hits) => {
+      const found = hits.filter(Boolean);
+      if (!found.length || stamp !== lastChecked.text) return;
+      if (res !== found[0]) {
+        res.signals.push({ id: 'url_blocklisted', w: 100, critical: true, p: { host: found[0].host } });
+        D.finalize(res);
+      }
+      if (lastResults[key]) lastResults[key]();
+    }).catch(() => {});
+  }
+
+  /* ---------- Atnaujinamos taisyklės ir „Kas naujo“ ---------- */
+  let rulesInfo = null;
+  function loadRules() {
+    return fetch('extension/shared/rules.json', { cache: 'no-cache' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        if (!r) return;
+        D.addRules(r);
+        I.addRuleTexts(r);
+        rulesInfo = r;
+        for (const k of Object.keys(lastResults)) lastResults[k]();
+        const seen = store.get('apsauga.rulesSeen');
+        if (seen && seen !== r.version && r.changes) showNews(r);
+        if (!seen) store.set('apsauga.rulesSeen', r.version);
+      })
+      .catch(() => {});
+  }
+  function showNews(r) {
+    const items = (r.changes && (r.changes[lang] || r.changes.en)) || [];
+    if (!items.length) return;
+    list('#newsList', items);
+    $('#news').hidden = false;
+  }
+  $('#newsClose').addEventListener('click', () => {
+    $('#news').hidden = true;
+    if (rulesInfo) store.set('apsauga.rulesSeen', rulesInfo.version);
+  });
+  function renderDbStatus() {
+    const DB = window.ApsaugaThreatDB;
+    if (!DB) return;
+    DB.meta().then((m) => {
+      if (!m) { $('#dbStatus').textContent = ''; return; }
+      $('#dbStatus').textContent = I.fmt(T.updatedLine, {
+        date: new Date(m.updated).toLocaleDateString(lang),
+        n: Number(m.count).toLocaleString(lang),
+        v: (rulesInfo && rulesInfo.version) || m.rules || '–'
+      });
+    });
+  }
+
+  /* ---------- Parama ---------- */
+  function renderSupport() {
+    const don = CFG.donate || {};
+    const box = $('#donateLinks');
+    box.textContent = '';
+    for (const l of don.links || []) {
+      if (!l || !/^https:\/\//.test(l.url || '')) continue;
+      const a = el('a', 'btn', l.label || l.url);
+      a.href = l.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      box.append(a);
+    }
+    const bank = don.bank;
+    $('#bankBox').hidden = !(bank && bank.iban);
+    if (bank && bank.iban) {
+      $('#bankName').textContent = bank.name || '';
+      $('#bankIban').textContent = bank.iban;
+      $('#bankPurpose').textContent = bank.purpose || '';
+    }
+    const hasDonate = box.childNodes.length > 0 || !$('#bankBox').hidden;
+    $('#donateLinks').hidden = box.childNodes.length === 0;
+    $('#supSafe').hidden = !hasDonate;
+    $('#plius').hidden = !hasDonate && !plus.expert;
+    renderPlus();
+  }
+  $('#bankCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('#bankIban').textContent.replace(/\s+/g, '')); toast(T.copied); } catch (e) { /* - */ }
+  });
+
+  /* ---------- Apsauga Plius (DI eksperto patikra, veikia Hostinger PHP serveryje) ---------- */
+  const plus = { expert: false, freeLeft: 0, freePerMonth: 0, license: null, products: [] };
+  function getLicense() { return store.get('apsauga.license') || ''; }
+  async function api(path, body) {
+    const r = await fetch('api/' + path, {
+      method: body ? 'POST' : 'GET',
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: 'same-origin'
+    });
+    let data = null;
+    try { data = await r.json(); } catch (e) { data = null; }
+    if (!data) throw new Error('no_api');
+    return data;
+  }
+  async function loadPlus() {
+    try {
+      const st = await api('status.php', { license: getLicense() || undefined });
+      Object.assign(plus, { expert: !!st.expert, freeLeft: st.freeLeft, freePerMonth: st.freePerMonth, license: st.license, products: st.products || [] });
+    } catch (e) {
+      plus.expert = false; // nėra PHP serverio (pvz. GitHub Pages)
+    }
+    renderSupport();
+    for (const k of Object.keys(lastResults)) lastResults[k]();
+  }
+  function renderPlus() {
+    $('#plusCard').hidden = !plus.expert;
+    if (!plus.expert) return;
+    const q = [];
+    if (plus.license && plus.license.left != null) q.push(I.fmt(T.plusCredits, { n: plus.license.left }));
+    q.push(I.fmt(T.plusFree, { n: plus.freeLeft, total: plus.freePerMonth }));
+    $('#plusQuota').textContent = q.join(' ');
+    const buy = $('#plusBuy');
+    buy.textContent = '';
+    for (const p of plus.products) {
+      const a = el('a', 'btn', p.label + (p.price ? ' – ' + p.price : ''));
+      a.href = p.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      buy.append(a);
+    }
+  }
+  $('#codeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = $('#codeInput').value.trim();
+    if (!code) return;
+    try {
+      const st = await api('status.php', { license: code });
+      if (!st.license) { toast(T.plusBadCode); return; }
+      store.set('apsauga.license', code);
+      plus.license = st.license;
+      $('#codeInput').value = '';
+      renderPlus();
+      toast(T.plusSaved);
+    } catch (err) { toast(T.expertErr.other); }
+  });
+  // Grįžus po apmokėjimo Stripe: ?paid=cs_...#plius
+  async function redeemPaid(session) {
+    try {
+      const r = await api('redeem.php', { session });
+      if (!r.ok || !r.code) throw new Error(r.error || 'fail');
+      store.set('apsauga.license', r.code);
+      $('#paidCode').textContent = r.code;
+      $('#paidBox').hidden = false;
+      await loadPlus();
+    } catch (e) {
+      $('#plius').hidden = false;
+      toast(T.plusPaidFail);
+    }
+    $('#plius').scrollIntoView({ block: 'start' });
+  }
+  $('#paidCode').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('#paidCode').textContent); toast(T.copied); } catch (e) { /* - */ }
+  });
+
+  // Sutikimas prieš siunčiant tekstą DI analizei
+  function expertConsent(box, btn) {
+    if (box.querySelector('.consent, .expert')) return;
+    const c = el('div', 'consent');
+    c.append(el('p', null, T.expertConsent));
+    const quota = plus.license && plus.license.left > 0
+      ? I.fmt(T.plusCredits, { n: plus.license.left })
+      : I.fmt(T.plusFree, { n: plus.freeLeft, total: plus.freePerMonth });
+    c.append(el('p', 'note', quota));
+    const row = el('div', 'row');
+    const go = el('button', 'btn', T.expertSend);
+    const no = el('button', 'btn ghost', T.expertCancel);
+    row.append(go, no);
+    c.append(row);
+    btn.closest('.row').after(c);
+    go.focus();
+    no.addEventListener('click', () => c.remove());
+    go.addEventListener('click', () => runExpert(box, c));
+  }
+  async function runExpert(box, c) {
+    c.textContent = '';
+    c.append(el('p', 'quota', T.expertWorking));
+    const res = lastChecked;
+    let r;
+    try {
+      r = await api('expert.php', {
+        text: res.text,
+        lang,
+        signals: (lastSignals || []).slice(0, 20),
+        license: getLicense() || undefined
+      });
+    } catch (e) { r = { ok: false, error: 'other' }; }
+    c.remove();
+    if (!r.ok) {
+      const card = el('div', 'expert');
+      card.append(el('p', null, T.expertErr[r.error] || T.expertErr.other));
+      if (r.error === 'quota') {
+        const go = el('button', 'btn', T.plusTitle);
+        go.addEventListener('click', () => $('#plius').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        card.append(go);
+      }
+      box.append(card);
+      return;
+    }
+    const card = el('div', 'expert');
+    card.append(el('h3', null, T.expertTitle));
+    const head = el('p');
+    head.append(el('span', 'chip ' + r.verdict, T.expertVerdict[r.verdict] || r.verdict));
+    head.append(document.createTextNode((T.expertConfidence[r.confidence] || '') + (r.scam_type ? ' · ' + r.scam_type : '')));
+    card.append(head, el('p', null, r.summary));
+    if (r.red_flags && r.red_flags.length) {
+      card.append(el('p', 'sub', T.expertFlags));
+      const ul = el('ul', 'steps');
+      r.red_flags.forEach((x) => ul.append(el('li', null, x)));
+      card.append(ul);
+    }
+    if (r.what_to_do && r.what_to_do.length) {
+      card.append(el('p', 'sub', T.expertTodo));
+      const ol = el('ol', 'steps');
+      r.what_to_do.forEach((x) => ol.append(el('li', null, x)));
+      card.append(ol);
+    }
+    card.append(el('p', 'note', T.expertNote));
+    box.append(card);
+    if (r.remaining) {
+      plus.freeLeft = r.remaining.free;
+      if (plus.license && r.remaining.credits != null) plus.license.left = r.remaining.credits;
+      renderPlus();
+    }
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   /* ---------- Paleidimas ---------- */
   applyI18n();
   const params = new URLSearchParams(location.search);
@@ -662,6 +914,13 @@
     showTab(fromHash || 'msg');
     // Peržiūros versijoje iškart parodome pavyzdinį rezultatą
     if (window.APSAUGA_DEMO && !fromHash) { $('#msg').value = T.examples[0].text; $('#sender').value = T.examples[0].sender; checkMsg(); }
+  }
+  loadRules().then(renderDbStatus);
+  loadPlus();
+  if (/^cs_(test|live)_[A-Za-z0-9]+$/.test(params.get('paid') || '')) {
+    const sess = params.get('paid');
+    history.replaceState(null, '', location.pathname + '#plius');
+    redeemPaid(sess);
   }
   window.addEventListener('hashchange', () => {
     const t = Object.keys(TAB_HASH).find((k) => TAB_HASH[k] === location.hash.slice(1));

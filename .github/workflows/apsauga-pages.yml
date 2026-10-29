@@ -21,8 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Atpažinimo variklio testai
-        run: node --test apsauga/tests/detector.test.js
+      - name: Testai
+        run: node --test apsauga/tests/*.test.js
 
   deploy:
     needs: test
@@ -45,6 +45,8 @@ jobs:
           # Esami saugyklos puslapiai lieka savo vietose
           find . -maxdepth 1 -type f -name '*.html*' -exec cp {} _site/ \;
           sh apsauga/tools/build-site.sh _site/apsauga
+          # GitHub Pages nevykdo PHP – Plius dalis veikia tik Hostinger
+          rm -rf _site/apsauga/api
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

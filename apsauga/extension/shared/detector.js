@@ -433,6 +433,7 @@
     const add = (id, w, p, critical) => signals.push({ id, w, p: p || {}, critical: !!critical });
 
     if (opts.blocklist && inList(host, opts.blocklist)) add('url_blocklisted', 100, { host }, true);
+    else if (EXTRA_BLOCK.size && inList(host, EXTRA_BLOCK)) add('url_blocklisted', 100, { host }, true);
 
     if (isIp(host)) add('url_ip', 55, { host }, true);
     // Tarptautinis domenas: dekoduojame ir tikriname, ar netikros raidės neslepia prekės ženklo
@@ -565,6 +566,22 @@
       for (let i = parts.length; i >= 2; i--) if (feed.urls.has(parts.slice(0, i).join('/'))) return true;
     }
     return false;
+  }
+
+  // Raktai, pagal kuriuos adresas ieškomas sukčių duomenų bazėje (tie patys, kaip buildFeed)
+  function feedKeys(u) {
+    if (typeof u === 'string') u = parseUrl(u);
+    if (!u) return [];
+    const h = u.hostname.toLowerCase().replace(/\.$/, '');
+    const keys = [];
+    if (!SHARED_HOSTS.has(h)) {
+      const parts = h.split('.');
+      for (let i = 0; i < parts.length - 1; i++) keys.push(parts.slice(i).join('.'));
+    } else {
+      const parts = normUrl(u).split('/');
+      for (let i = parts.length; i >= 2; i--) keys.push('u:' + parts.slice(0, i).join('/'));
+    }
+    return keys;
   }
 
   function inList(host, list) {
@@ -834,10 +851,49 @@
     return null;
   }
 
+  /* ---------- Atnaujinamos taisyklės (rules.json) ----------
+   * Naujos sukčių schemos ir prekės ženklai pridedami be programos atnaujinimo.
+   * Taisyklės – tik duomenys (reguliariosios išraiškos, domenai), ne kodas.
+   */
+  const EXTRA_BLOCK = new Set();
+  const loadedRules = { version: null, count: 0 };
+  const SAFE_ID = /^[a-z][a-z0-9_]{1,40}$/;
+
+  function addRules(r) {
+    if (!r || typeof r !== 'object') return loadedRules;
+    let added = 0;
+    for (const b of r.brands || []) {
+      if (!b || !b.name || !Array.isArray(b.domains) || !Array.isArray(b.keys)) continue;
+      if (BRANDS.some((x) => x.name === b.name)) continue;
+      const domains = b.domains.map((d) => String(d).toLowerCase()).filter((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d));
+      const keys = b.keys.map((k) => String(k).toLowerCase()).filter((k) => /^[a-z0-9-]{3,30}$/.test(k));
+      if (domains.length && keys.length) { BRANDS.push({ name: String(b.name).slice(0, 40), keys, domains }); added++; }
+    }
+    for (const t of r.textRules || []) {
+      if (!t || !SAFE_ID.test(t.id || '') || TEXT_RULES.some((x) => x.id === t.id)) continue;
+      const re = [];
+      for (const src of t.re || []) {
+        // Apsauga nuo per sudėtingų (lėtų) išraiškų
+        if (typeof src !== 'string' || src.length > 300 || /\([^)]*[+*]\)[+*{]/.test(src)) continue;
+        try { re.push(new RegExp(src, 'i')); } catch (e) { /* netinkama išraiška praleidžiama */ }
+      }
+      if (!re.length) continue;
+      TEXT_RULES.push({ id: t.id, w: Math.max(0, Math.min(70, Number(t.w) || 20)), critical: !!t.critical, negatable: !!t.negatable, re });
+      added++;
+    }
+    for (const h of r.blockHosts || []) {
+      const host = String(h).toLowerCase().trim();
+      if (/^[a-z0-9.-]+\.[a-z]{2,}$/.test(host) && !officialBrand(host)) { EXTRA_BLOCK.add(host); added++; }
+    }
+    if (r.version) loadedRules.version = String(r.version).slice(0, 20);
+    loadedRules.count += added;
+    return loadedRules;
+  }
+
   const api = {
     BRANDS, analyzeUrl, analyzeText, analyzeIban, analyzeProfile, extractUrls, classifyField,
     registrable, officialBrand: (h) => { const b = officialBrand(String(h).toLowerCase()); return b ? b.name : null; },
-    inList, ibanCountries: Object.keys(IBAN_LEN), tlds: Array.from(TEXT_TLDS), decodeHost, skeleton, buildFeed, matchFeed, version: '1.1.0'
+    inList, feedKeys, addRules, rules: loadedRules, finalize, ibanCountries: Object.keys(IBAN_LEN), tlds: Array.from(TEXT_TLDS), decodeHost, skeleton, buildFeed, matchFeed, version: '1.1.0'
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.ScamDetector = api;

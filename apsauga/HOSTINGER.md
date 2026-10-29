@@ -97,6 +97,37 @@ atsinaujina kitą kartą atidarius.
 - Laiške Tesonet ir pilotui naudokite naują adresą.
 - Užsiregistruokite **Google Search Console** – kad įrankį rastų paieškoje.
 
+## 8. Apsauga Plius (DI patikra ir apmokėjimai) – nebūtina
+
+Svetainė veikia ir be šio žingsnio – tada Plius skiltis tiesiog nerodoma.
+
+1. **PHP versija:** hPanel → **Advanced → PHP Configuration** → pasirinkite **8.1 ar naujesnę**.
+   Įsitikinkite, kad įjungti plėtiniai `pdo_sqlite` ir `curl` (dažniausiai įjungti).
+2. **Slapti nustatymai UŽ viešojo aplanko ribų.** File Manager'yje eikite vienu lygiu aukščiau
+   nei `public_html` (domeno aplankas) ir sukurkite aplanką **`apsauga-private`**.
+   Į jį įkelkite failą `config.php`, padarytą iš `api/config.example.php`.
+3. **Anthropic API raktas:** https://console.anthropic.com → API Keys → Create key → įrašykite į
+   `anthropic_api_key`. Ten pat **Limits** nustatykite mėnesio išlaidų ribą (pvz. 20 €).
+4. **Administravimo slaptažodis:** sukurkite atspaudą (pvz. bet kuriame kompiuteryje su PHP):
+   `php -r "echo password_hash('jūsų-ilgas-slaptažodis', PASSWORD_DEFAULT), PHP_EOL;"`
+   ir įrašykite į `admin_password_hash`. Administravimas: `https://jūsų-domenas/api/admin.php`.
+5. **Stripe apmokėjimai:**
+   - https://dashboard.stripe.com → **Payment Links** → sukurkite paketą (pvz. „30 DI patikrų“, 2,99 €).
+   - Nuorodos nustatymuose **After payment → Don't show confirmation page → Redirect** į
+     `https://jūsų-domenas/?paid={CHECKOUT_SESSION_ID}#plius`
+   - **Developers → API keys → Create restricted key**, leidimas **Checkout Sessions: Read** →
+     įrašykite į `stripe_secret_key`.
+   - Į `products` įrašykite nuorodą (`url`), jos ID (`plink_...`), kainą ir patikrų skaičių.
+6. Patikrinkite: `https://jūsų-domenas/api/status.php` turi rodyti `"expert":true`.
+
+Duomenų bazė (`apsauga.sqlite`) susikuria pati aplanke `apsauga-private`. Kartą per mėnesį
+atsisiųskite jos kopiją (joje Plius kodų atspaudai).
+
+## 9. Parama
+
+`config.js` → `donate` įrašykite savo PayPal / Buy Me a Coffee nuorodas ar banko sąskaitą
+(žr. `MONETIZACIJA.md`). Pakeitimas GitHub'e → svetainė atsinaujina pati.
+
 ## Dažnos problemos
 
 | Problema | Sprendimas |
@@ -106,3 +137,5 @@ atsinaujina kitą kartą atidarius.
 | Nėra šakos `svetaine` | Kodas dar nesujungtas į `main` arba Actions nepavyko (žr. Actions skirtuką) |
 | 500 klaida | Laikinai pervadinkite `.htaccess` į `htaccess.txt` ir parašykite Claude, kas matosi |
 | Nesiūlo įdiegti į telefoną | Neįjungtas SSL (https) |
+| `/api/status.php` rodo klaidą 500 | PHP versija < 8.1 arba nėra `pdo_sqlite`; žr. hPanel → PHP Configuration |
+| Plius skiltis nerodoma | `apsauga-private/config.php` nerastas arba tuščias `anthropic_api_key` |

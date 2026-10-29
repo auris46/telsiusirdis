@@ -1,6 +1,6 @@
 # Apsauga – sukčių atpažinimo ir blokavimo įrankis
 
-> **Paskelbimas Hostinger:** [HOSTINGER.md](HOSTINGER.md).
+> **Paskelbimas Hostinger:** [HOSTINGER.md](HOSTINGER.md). **Nuolatiniai atnaujinimai:** [ATNAUJINIMAI.md](ATNAUJINIMAI.md). **Parama ir Plius:** [MONETIZACIJA.md](MONETIZACIJA.md).
 > **MVP:** paleidimo planas, pilotas ir sėkmės rodikliai – [MVP.md](MVP.md). Plėtinio paskelbimas parduotuvėse – [STORE.md](STORE.md). Privatumo politika – [privatumas.html](privatumas.html).
 
 Nemokamas, paprastas įrankis, padedantis per kelias sekundes atpažinti sukčius:
@@ -70,10 +70,14 @@ apsauga/
   ocr.js                      teksto skaitymas iš ekrano nuotraukos (Tesseract, tik įrenginyje)
   vendor/tesseract/           Tesseract.js 7 (Apache-2.0) + lietuvių / anglų modeliai
   vendor/jsQR.js              QR kodų skaitymas (Apache-2.0), kai naršyklė neturi BarcodeDetector
-  tests/detector.test.js      testai
+  extension/shared/rules.json atnaujinamos sukčių schemų taisyklės (be programos atnaujinimo)
+  threatdb.js                 privati sukčių svetainių bazės paieška (SHA-256 prefiksai)
+  api/                        Apsauga Plius: DI eksperto patikra, Stripe, admin (PHP, Hostinger)
+  tools/build-threat-db.js    kasnaktinė sukčių svetainių bazė
+  tests/                      testai (variklis, rules.json, bazė)
 ```
 
-Testai: `node --test apsauga/tests/detector.test.js`
+Testai: `node --test apsauga/tests/*.test.js`
 
 **Nauja kalba:** `extension/shared/i18n.js` nukopijuokite `en` bloką, išverskite ir įtraukite į `strings`.
 **Naujas bankas / įmonė:** įrašykite oficialius domenus į `BRANDS` sąrašą `detector.js`.

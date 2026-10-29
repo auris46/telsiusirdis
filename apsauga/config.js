@@ -14,6 +14,19 @@
  * Kaip susikurti formą – žr. MVP.md, skyrių „Atsiliepimų forma“.
  */
 window.APSAUGA_CONFIG = {
-  version: '1.2.0',
-  feedbackUrl: ''
+  version: '1.3.0',
+  feedbackUrl: '',
+
+  /*
+   * Parama kūrėjams. Rodoma tik tai, kas užpildyta. Naudokite tik patikimas platformas –
+   * šioje svetainėje niekada neprašome kortelės duomenų.
+   * links: [{ label: 'Paremti per PayPal', url: 'https://www.paypal.com/donate/?hosted_button_id=...' },
+   *         { label: 'Buy Me a Coffee', url: 'https://buymeacoffee.com/...' },
+   *         { label: 'Revolut', url: 'https://revolut.me/...' }]
+   * bank: { name: 'Gavėjo vardas', iban: 'LT00 0000 0000 0000 0000', purpose: 'Parama Apsaugai' }
+   */
+  donate: {
+    links: [],
+    bank: null
+  }
 };

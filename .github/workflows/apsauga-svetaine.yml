@@ -1,13 +1,19 @@
 # Paruošia svetainę Hostinger (ar kitam talpinimui) atskiroje šakoje „svetaine“.
 # Hostinger: Websites → Advanced → Git → šaka „svetaine“, auto-deploy įjungtas.
-# Kiekvienas pakeitimas main šakoje → testai → nauja svetainės versija → Hostinger ją paskelbia pats.
-# Jei testai nepavyksta, svetainė neatnaujinama.
+#
+# Kada paleidžiama:
+#  - kiekvienas pakeitimas main šakoje (nauja versija, naujos taisyklės rules.json);
+#  - kiekvieną naktį – atnaujinama sukčių svetainių duomenų bazė;
+#  - rankiniu būdu (Actions → Run workflow).
+# Jei testai nepavyksta ar sukčių sąrašai nepasiekiami, svetainė NEatnaujinama – lieka ankstesnė.
 name: Apsauga – svetainė Hostinger
 
 on:
   push:
     branches: [main, master]
     paths: ['apsauga/**', '.github/workflows/apsauga-svetaine.yml']
+  schedule:
+    - cron: '23 3 * * *'
   workflow_dispatch:
 
 permissions:
@@ -25,18 +31,34 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Atpažinimo variklio testai
-        run: node --test apsauga/tests/detector.test.js
-      - name: Surinkti svetainę
+      - name: Testai (atpažinimo variklis ir rules.json)
+        run: node --test apsauga/tests/*.test.js
+      - name: PHP bibliotekos (Apsauga Plius)
+        run: |
+          php -v
+          composer install --no-dev --no-interaction --no-progress --optimize-autoloader --working-dir=apsauga/api
+          for f in apsauga/api/*.php; do php -l "$f"; done
+      - name: Surinkti svetainę ir sukčių duomenų bazę
         run: sh apsauga/tools/build-site.sh _site
       - name: Paskelbti į šaką „svetaine“
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd _site
-          git init -q -b svetaine
+          REPO="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git clone -q --depth 1 --branch svetaine "$REPO" _deploy 2>/dev/null; then
+            echo "Atnaujinama esama šaka"
+          else
+            mkdir _deploy && git -C _deploy init -q -b svetaine && git -C _deploy remote add origin "$REPO"
+          fi
+          find _deploy -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R _site/. _deploy/
+          cd _deploy
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -qm "Svetainė iš ${GITHUB_SHA}"
-          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" svetaine
+          if git diff --cached --quiet; then
+            echo "Pakeitimų nėra"
+            exit 0
+          fi
+          git commit -qm "Svetainė iš ${GITHUB_SHA} ($(date -u +%Y-%m-%d))"
+          git push -q origin svetaine

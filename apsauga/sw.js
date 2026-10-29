@@ -1,11 +1,13 @@
 /* Apsauga – leidžia programėlei veikti be interneto */
-const CACHE = 'apsauga-v4';
+const CACHE = 'apsauga-v5';
 const FILES = [
   './',
   './index.html',
   './app.js',
   './config.js',
   './ocr.js',
+  './threatdb.js',
+  './extension/shared/rules.json',
   './manifest.webmanifest',
   './extension/shared/i18n.js',
   './extension/shared/detector.js',
@@ -51,7 +53,9 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(handleShare(req));
     return;
   }
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const u = new URL(req.url);
+  // API (Plius) ir mokėjimai – visada tiesiai į serverį
+  if (req.method !== 'GET' || u.origin !== location.origin || u.pathname.includes('/api/')) return;
   e.respondWith(
     fetch(req)
       .then((res) => {

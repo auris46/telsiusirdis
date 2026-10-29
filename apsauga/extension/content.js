@@ -36,6 +36,8 @@
     .filter(Boolean)
     .reduce((a, b) => (b.score > a.score ? b : a));
 
+  // Naujausios sukčių schemų taisyklės (asinchroniškai – laukeliai saugomi ir be jų)
+  chrome.storage.local.get('rulesJson').then((r) => { if (r.rulesJson) { D.addRules(r.rulesJson); I.addRuleTexts(r.rulesJson); } }).catch(() => {});
   chrome.storage.local.get(['settings', 'trusted']).then((r) => {
     settings = Object.assign(settings, r.settings || {});
     trusted = r.trusted || [];

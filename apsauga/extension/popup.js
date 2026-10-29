@@ -17,6 +17,15 @@
   $('lblTrusted').textContent = T.extPopupTrusted;
   $('lblBlocked').textContent = T.extPopupBlocked;
 
+  // Naujausios sukčių schemų taisyklės (įdiegtos + atsisiųstos)
+  await (async () => {
+    try {
+      const b = await (await fetch(chrome.runtime.getURL('shared/rules.json'))).json();
+      D.addRules(b); I.addRuleTexts(b);
+      const r = await chrome.storage.local.get('rulesJson');
+      if (r.rulesJson) { D.addRules(r.rulesJson); I.addRuleTexts(r.rulesJson); }
+    } catch (e) { /* - */ }
+  })();
   const defaults = { enabled: true, strict: true, feed: true, rdap: true };
   let st = await chrome.storage.local.get(['settings', 'trusted', 'blocked', 'feedCount', 'feedUpdated']);
   let settings = Object.assign({}, defaults, st.settings || {});

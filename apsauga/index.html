@@ -160,6 +160,26 @@ details.howto .helpsteps li::before{background:var(--lake)}
 .fontbtn[aria-pressed="true"]{background:var(--lake);color:var(--surface)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.drop,.ocr .meter i{transition:none}}
+.support{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 18px;margin:0 0 22px}
+.support .row{margin-top:8px}
+.btn.small{min-height:40px;padding:6px 12px;font-size:.9rem}
+.card.plus{background:var(--lake-soft);border-color:var(--lake)}
+.quota{font-weight:700}
+.codeform .row{flex-wrap:nowrap}
+.codeform input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.04em}
+.paid code{font-size:1.3rem}
+.news{background:var(--moss-soft);border:2px solid var(--moss);border-radius:16px;padding:16px 18px;margin:0 0 22px}
+.news ul{margin:6px 0 0;padding-left:1.2em}
+.dbstatus{margin:0 0 6px;font-variant-numeric:tabular-nums}
+.expert{margin-top:16px;border:2px solid var(--lake);border-radius:16px;padding:16px;background:var(--lake-soft)}
+.expert h3{margin:0 0 6px}
+.expert .chip{display:inline-block;font-weight:800;border-radius:999px;padding:3px 12px;margin-right:6px;color:#fff;background:var(--muted)}
+.expert .chip.scam{background:var(--pulse)}
+.expert .chip.suspicious{background:var(--amber)}
+.expert .chip.safe{background:var(--moss)}
+:root[data-theme="dark"] .expert .chip{color:#0E171F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .expert .chip{color:#0E171F}}
+.consent{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px dashed var(--line)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600;z-index:50}
 </style>
 </head>
@@ -180,6 +200,12 @@ details.howto .helpsteps li::before{background:var(--lake)}
     <h1 data-i18n="tagline">Patikrinkite žinutę, nuorodą ar sąskaitą prieš spausdami ar mokėdami</h1>
     <span class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="privacy"></span></span>
   </section>
+
+  <aside class="news" id="news" hidden role="status">
+    <h3 data-i18n="newsTitle"></h3>
+    <ul id="newsList"></ul>
+    <button class="btn ghost" id="newsClose" data-i18n="newsClose"></button>
+  </aside>
 
   <nav class="tabs" role="tablist" aria-label="Įrankiai">
     <button class="tab" role="tab" id="t-msg" aria-controls="p-msg" data-tab="msg">
@@ -358,13 +384,49 @@ details.howto .helpsteps li::before{background:var(--lake)}
     </div>
   </section>
 
-  <footer><span data-i18n="footer"></span> <a href="privatumas.html" data-i18n="privacyLink"></a></footer>
+
+  <section class="support" id="plius" aria-labelledby="supTitle" hidden>
+    <h2 id="supTitle" data-i18n="supTitle"></h2>
+    <p data-i18n="supBody"></p>
+    <div class="row" id="donateLinks"></div>
+    <dl class="kv" id="bankBox" hidden>
+      <dt data-i18n="supName"></dt><dd id="bankName"></dd>
+      <dt>IBAN</dt><dd><span id="bankIban"></span> <button class="btn ghost small" id="bankCopy" type="button" data-i18n="supCopy"></button></dd>
+      <dt data-i18n="supPurpose"></dt><dd id="bankPurpose"></dd>
+    </dl>
+    <p class="note" id="supSafe" data-i18n="supSafe"></p>
+
+    <div class="card plus" id="plusCard" hidden>
+      <h3 data-i18n="plusTitle"></h3>
+      <p data-i18n="plusBody"></p>
+      <p class="quota" id="plusQuota"></p>
+      <div class="paid" id="paidBox" hidden>
+        <p><b data-i18n="plusPaidTitle"></b></p>
+        <code class="copy" id="paidCode"></code>
+        <p class="note" data-i18n="plusPaidSave"></p>
+      </div>
+      <div class="row" id="plusBuy"></div>
+      <form class="codeform" id="codeForm">
+        <label class="lbl" for="codeInput" data-i18n="plusCode"></label>
+        <div class="row">
+          <input type="text" id="codeInput" data-i18n-ph="plusCodePh" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <button class="btn ghost" type="submit" data-i18n="plusActivate"></button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    <p id="dbStatus" class="dbstatus"></p>
+    <span data-i18n="footer"></span> <a href="privatumas.html" data-i18n="privacyLink"></a>
+  </footer>
 </main>
 
 <script src="config.js"></script>
 <script src="extension/shared/i18n.js"></script>
 <script src="extension/shared/detector.js"></script>
 <script src="ocr.js"></script>
+<script src="threatdb.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
