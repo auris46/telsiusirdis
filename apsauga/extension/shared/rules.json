@@ -1,0 +1,169 @@
+{
+  "version": "2026-10-29",
+  "changes": {
+    "lt": [
+      "Atpažįstamos netikros Booking.com / Airbnb žinutės apie „atšauktą rezervaciją“",
+      "Atpažįstami netikri pranešimai „Smart-ID baigia galioti“",
+      "Atpažįstama netikra „saugaus apmokėjimo“ nuoroda skelbimų portaluose",
+      "Atpažįstami netikri pasiūlymai „gauti kompensaciją ar valstybės paramą“",
+      "Atpažįstamos Telegram „Premium dovanos“ ir paskyros „patvirtinimo“ apgaulės"
+    ],
+    "en": [
+      "Detects fake Booking.com / Airbnb messages about a “cancelled reservation”",
+      "Detects fake “your Smart-ID / app is expiring” notices",
+      "Detects fake “safe payment” links on marketplaces",
+      "Detects fake “claim your compensation or state benefit” offers",
+      "Detects Telegram “Premium gift” and account “verification” scams"
+    ]
+  },
+  "brands": [
+    {
+      "name": "Booking.com",
+      "keys": [
+        "booking"
+      ],
+      "domains": [
+        "booking.com"
+      ]
+    },
+    {
+      "name": "Airbnb",
+      "keys": [
+        "airbnb"
+      ],
+      "domains": [
+        "airbnb.com",
+        "airbnb.lt",
+        "airbnb.co.uk",
+        "airbnb.de"
+      ]
+    },
+    {
+      "name": "Telegram",
+      "keys": [
+        "telegram"
+      ],
+      "domains": [
+        "telegram.org",
+        "t.me",
+        "telegram.me"
+      ]
+    },
+    {
+      "name": "CityBee",
+      "keys": [
+        "citybee"
+      ],
+      "domains": [
+        "citybee.lt",
+        "citybee.lv",
+        "citybee.ee"
+      ]
+    },
+    {
+      "name": "Allegro",
+      "keys": [
+        "allegro"
+      ],
+      "domains": [
+        "allegro.pl",
+        "allegro.lt"
+      ]
+    },
+    {
+      "name": "Facebook Marketplace",
+      "keys": [
+        "marketplace"
+      ],
+      "domains": [
+        "facebook.com"
+      ]
+    }
+  ],
+  "textRules": [
+    {
+      "id": "booking_reservation",
+      "w": 35,
+      "re": [
+        "(rezervacij\\S*|užsakym\\S*)\\s.{0,40}(atšaukt|bus atšaukta|nepatvirtint|patvirtinkite kortel|kortelės patvirtinim)",
+        "(reservation|booking)\\s.{0,40}(cancel|will be cancelled|not confirmed|verify your card|confirm your card|card verification)"
+      ],
+      "text": {
+        "lt": "Gąsdinama, kad rezervacija bus atšaukta, jei nepatvirtinsite kortelės („{quote}“) – dažna Booking.com / Airbnb apgaulė.",
+        "en": "Says your reservation will be cancelled unless you confirm your card (“{quote}”) – a common Booking.com / Airbnb scam."
+      },
+      "examples": [
+        "Booking.com: jūsų rezervacija bus atšaukta, jei per 12 val. nepatvirtinsite kortelės.",
+        "Your reservation will be cancelled unless you verify your card within 24 hours."
+      ]
+    },
+    {
+      "id": "app_expiring",
+      "w": 35,
+      "re": [
+        "(smart-?id|mobil\\S* parašas|m-?parašas|banko programėl\\S*|sertifikat\\S*)\\s.{0,40}(baigia galioti|nustos veikti|pasibaig|bus išjungt|reikia atnaujinti|atnaujinkite)",
+        "(smart-?id|mobile-?id|banking app|certificate)\\s.{0,40}(expir|will stop working|will be disabled|must be renewed|update now)"
+      ],
+      "text": {
+        "lt": "Rašoma, kad Smart-ID ar banko programėlė „baigia galioti“ („{quote}“) – tikri atnaujinimai vyksta tik programėlėje, ne per nuorodą.",
+        "en": "Claims your ID or banking app is “expiring” (“{quote}”) – real renewals happen in the app itself, never via a link."
+      },
+      "examples": [
+        "Jūsų Smart-ID baigia galioti. Atnaujinkite čia.",
+        "Your Smart-ID will stop working tomorrow, update now."
+      ]
+    },
+    {
+      "id": "safe_payment_link",
+      "w": 45,
+      "critical": true,
+      "re": [
+        "(saug\\S* (apmokėjim|pirkim|siunt)|pinigų gavim\\S*|gauti pinigus|lėšų gavim)\\S*\\s.{0,60}(nuorod|paspausk|spauskite|kortel)",
+        "(safe|secure) (payment|purchase|delivery)\\s.{0,60}(link|click|card)|(receive|claim) (the )?(money|payment|funds)\\s.{0,40}(link|card)"
+      ],
+      "text": {
+        "lt": "Siūloma „gauti pinigus“ ar „saugiai apmokėti“ per nuorodą („{quote}“). Pardavėjui pinigų gauti kortelės duomenų įvesti NEREIKIA.",
+        "en": "Offers to “receive money” or “pay safely” via a link (“{quote}”). A seller never needs to enter card details to receive money."
+      },
+      "examples": [
+        "Apmokėjau prekę. Pinigų gavimui spauskite nuorodą ir įveskite kortelę.",
+        "I paid via safe payment, click the link to receive the money to your card."
+      ]
+    },
+    {
+      "id": "state_benefit",
+      "w": 30,
+      "re": [
+        "(kompensacij\\S*|valstyb\\S* parama|išmok\\S*|pašalp\\S*|parama šildymui|energetikos kompensacij\\S*)\\s.{0,50}(gaukite|pateikite|užpildykite|nuorod|patvirtinkite|liko)",
+        "(compensation|government (benefit|grant|payment)|energy (rebate|support))\\s.{0,50}(claim|apply|fill|link|confirm|left)",
+        "(claim|apply for|receive|get)\\s.{0,30}(compensation|(government|state) (benefit|grant|payment|support)|energy (rebate|support))",
+        "(gaukite|pasiimkite|atsiimkite)\\s.{0,30}(kompensacij|valstyb\\S* param|išmok)"
+      ],
+      "text": {
+        "lt": "Žadama kompensacija ar valstybės parama per nuorodą („{quote}“). Paramą skiria tik per oficialias sistemas (pvz. spis.lt, epaslaugos.lt).",
+        "en": "Promises compensation or a state benefit via a link (“{quote}”). Benefits are only handled through official government portals."
+      },
+      "examples": [
+        "Jums priklauso energetikos kompensacija – užpildykite formą.",
+        "Claim your government benefit: fill the form at the link."
+      ]
+    },
+    {
+      "id": "telegram_gift",
+      "w": 35,
+      "re": [
+        "telegram\\W.{0,40}(premium|dovan|gift|patvirtin|verif|kod)",
+        "(premium|stars)\\s.{0,20}(dovan\\S*|gift)\\s.{0,40}(nuorod|link|aktyv|activate|claim)"
+      ],
+      "text": {
+        "lt": "Telegram „Premium dovana“ ar paskyros „patvirtinimas“ („{quote}“) – taip perimamos paskyros.",
+        "en": "Telegram “Premium gift” or account “verification” (“{quote}”) – a way to hijack accounts."
+      },
+      "examples": [
+        "Jums padovanotas Telegram Premium! Aktyvuokite per nuorodą.",
+        "Telegram: verify your account with the code we sent."
+      ]
+    }
+  ],
+  "blockHosts": []
+}

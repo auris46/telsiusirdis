@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apsauga – sukčių žinučių ir svetainių tikrinimas</title>
+<meta name="description" content="Nemokamas įrankis: patikrinkite SMS, nuorodą, banko sąskaitą ar paskyrą ir atpažinkite sukčius per kelias sekundes.">
+<meta name="theme-color" content="#1F4E6B">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="extension/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="extension/icons/icon192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF3F5; --surface:#FFFFFF; --ink:#16202B; --muted:#4A5866;
+  --lake:#1F4E6B; --lake-soft:#D6E4EC; --pulse:#B3202B; --pulse-soft:#F7DDDF;
+  --moss:#2F6B40; --moss-soft:#DCEBDF; --amber:#7A4E00; --amber-soft:#F5E6C8;
+  --line:#C6D2DA;
+  --font:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E171F; --surface:#16232F; --ink:#E7EDF2; --muted:#A5B4C0;
+    --lake:#86B9D8; --lake-soft:#1D3445; --pulse:#FF7078; --pulse-soft:#3B1D22;
+    --moss:#80C893; --moss-soft:#1A3223; --amber:#E6B865; --amber-soft:#3A2D12;
+    --line:#2B3B49;
+  }
+}
+:root[data-size="big"]{font-size:20px}
+:root[data-size="big"] body{font-size:23px}
+:root[data-theme="dark"]{
+    --bg:#0E171F; --surface:#16232F; --ink:#E7EDF2; --muted:#A5B4C0;
+    --lake:#86B9D8; --lake-soft:#1D3445; --pulse:#FF7078; --pulse-soft:#3B1D22;
+    --moss:#80C893; --moss-soft:#1A3223; --amber:#E6B865; --amber-soft:#3A2D12;
+    --line:#2B3B49;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:19px;line-height:1.55;-webkit-text-size-adjust:100%;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+a{color:var(--lake)}
+h1,h2,h3{line-height:1.15;margin:0 0 .4em;font-weight:800;letter-spacing:-.01em}
+h1{font-size:clamp(1.9rem,5vw,2.8rem)}
+h2{font-size:clamp(1.45rem,3.4vw,1.9rem)}
+h3{font-size:1.15rem}
+p{margin:0 0 1em;max-width:68ch}
+.wrap{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+:focus-visible{outline:3px solid var(--lake);outline-offset:3px;border-radius:6px}
+[hidden]{display:none!important}
+
+header.top{background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.topbar{display:flex;align-items:center;gap:12px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:960px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;margin-right:auto;color:var(--ink);text-decoration:none}
+.brand svg{width:36px;height:36px;flex:none}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.lang button{font:inherit;font-size:.9rem;font-weight:600;border:0;background:transparent;color:var(--ink);padding:8px 14px;cursor:pointer;min-height:44px}
+.lang button[aria-pressed="true"]{background:var(--lake);color:var(--surface)}
+
+.hero{padding:22px 0 8px}
+.hero p{color:var(--muted);margin-bottom:.5em}
+.privacy{display:inline-flex;gap:8px;align-items:center;font-size:.92rem;color:var(--moss);font-weight:600}
+.privacy svg{width:18px;height:18px;flex:none}
+
+nav.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 18px}
+@media (max-width:640px){nav.tabs{grid-template-columns:repeat(2,1fr)}}
+.tab{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;border-radius:16px;border:2px solid var(--line);
+  background:var(--surface);color:var(--ink);font:inherit;font-weight:800;font-size:1.02rem;text-align:left;cursor:pointer;min-height:88px;line-height:1.2}
+.tab svg{width:28px;height:28px;color:var(--lake)}
+.tab[aria-selected="true"]{border-color:var(--lake);background:var(--lake-soft)}
+.tab.help svg{color:var(--pulse)}
+.tab.help[aria-selected="true"]{border-color:var(--pulse);background:var(--pulse-soft)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 18px;margin-bottom:22px}
+.panel .hint{color:var(--muted)}
+label.lbl{display:block;font-weight:600;margin:14px 0 6px}
+textarea,input[type=text],input[type=url],select{width:100%;font:inherit;font-size:1.05rem;color:var(--ink);background:var(--bg);border:2px solid var(--line);
+  border-radius:12px;padding:12px 14px;min-height:52px}
+textarea{min-height:150px;resize:vertical}
+textarea:focus,input:focus,select:focus{border-color:var(--lake);outline:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.btn{font:inherit;font-weight:800;font-size:1.05rem;border-radius:14px;padding:12px 20px;min-height:54px;cursor:pointer;border:2px solid var(--lake);
+  background:var(--lake);color:var(--surface);display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--lake)}
+.btn.big{flex:1 1 220px;justify-content:center}
+.btn.danger{background:var(--pulse);border-color:var(--pulse);color:#fff}
+:root[data-theme="dark"] .btn.danger{color:#1a0507}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.danger{color:#1a0507}}
+.btn svg{width:22px;height:22px}
+.note{font-size:.95rem;color:var(--muted);margin-top:10px}
+
+.result{margin-top:20px}
+.verdict{display:flex;gap:14px;align-items:flex-start;border-radius:16px;padding:18px;border:2px solid}
+.verdict svg{width:44px;height:44px;flex:none}
+.verdict h3{font-size:1.35rem;margin:0 0 4px}
+.verdict p{margin:0}
+.verdict.ok{background:var(--moss-soft);border-color:var(--moss);color:var(--ink)}
+.verdict.ok svg{color:var(--moss)}
+.verdict.warn{background:var(--amber-soft);border-color:var(--amber)}
+.verdict.warn svg{color:var(--amber)}
+.verdict.danger{background:var(--pulse-soft);border-color:var(--pulse)}
+.verdict.danger svg{color:var(--pulse)}
+.meter{height:10px;border-radius:999px;background:var(--line);margin:14px 0 4px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:999px}
+.reasons{margin:16px 0 0;padding:0;list-style:none}
+.reasons li{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.reasons li::before{content:"";flex:none;width:12px;height:12px;border-radius:50%;margin-top:.45em;background:var(--muted)}
+.reasons li.hi::before{background:var(--pulse)}
+.reasons li.mid::before{background:var(--amber)}
+.reasons li.good::before{background:var(--moss)}
+.steps{margin:6px 0 0;padding-left:1.3em}
+.steps li{margin:4px 0}
+.sub{font-weight:800;margin:18px 0 4px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-weight:600;word-break:break-all}
+.urlbox{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px dashed var(--line);word-break:break-all;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.95rem}
+.urlbox b{color:var(--pulse)}
+
+.checks{display:grid;gap:8px;margin-top:10px}
+.checks label{display:flex;gap:12px;align-items:flex-start;padding:12px;border:2px solid var(--line);border-radius:12px;cursor:pointer;background:var(--bg)}
+.checks input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--lake)}
+.checks label:has(input:checked){border-color:var(--lake);background:var(--lake-soft)}
+
+.card{border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:14px;background:var(--bg)}
+.card h3{display:flex;gap:10px;align-items:center}
+.card h3 svg{width:26px;height:26px;color:var(--lake);flex:none}
+code.copy{display:inline-block;font-size:1.1rem;font-weight:800;padding:8px 12px;border-radius:10px;background:var(--surface);border:2px solid var(--lake);cursor:pointer;margin:4px 0}
+ol.golden{counter-reset:g;list-style:none;padding:0;margin:8px 0 0}
+ol.golden li{counter-increment:g;display:flex;gap:12px;padding:8px 0;font-weight:600}
+ol.golden li::before{content:counter(g);flex:none;width:32px;height:32px;border-radius:50%;background:var(--lake);color:var(--surface);display:grid;place-items:center;font-weight:800}
+.helpsteps{list-style:none;padding:0;margin:14px 0 0;counter-reset:h}
+.helpsteps li{counter-increment:h;display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+.helpsteps li::before{content:counter(h);flex:none;width:38px;height:38px;border-radius:50%;background:var(--pulse);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1.1rem}
+.helpsteps b{display:block;font-size:1.1rem}
+footer{color:var(--muted);font-size:.9rem;padding:10px 0 40px;text-align:center}
+.examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;font-size:.92rem;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:.92rem;font-weight:600;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 14px;min-height:40px;cursor:pointer}
+.chip:hover{border-color:var(--lake)}
+.fb{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.fb .q{font-weight:600;margin-right:auto}
+.fb label{display:flex;gap:8px;align-items:flex-start;font-size:.9rem;color:var(--muted);flex-basis:100%}
+.fb input{width:20px;height:20px;flex:none;accent-color:var(--lake)}
+.drop{border:2.5px dashed var(--line);border-radius:18px;padding:14px;margin:6px 0 12px;background:var(--bg);transition:border-color .15s,background .15s}
+.drop .row{margin-top:0}
+.drop.over{border-color:var(--lake);background:var(--lake-soft)}
+.ocr{margin:0 0 14px;font-weight:600}
+.ocr .meter{margin:0 0 6px}
+.ocr .meter i{background:var(--lake);width:4%;transition:width .3s}
+details.howto{margin:0 0 14px;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--surface)}
+details.howto summary{cursor:pointer;font-weight:700;min-height:32px;display:flex;align-items:center}
+details.howto .helpsteps li::before{background:var(--lake)}
+.safe{display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--moss);font-weight:600;margin-top:8px}
+.safe svg{width:18px;height:18px;flex:none}
+.iban-found{margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg)}
+.fontbtn{font:inherit;font-weight:800;font-size:1rem;min-height:44px;min-width:48px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.fontbtn[aria-pressed="true"]{background:var(--lake);color:var(--surface)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.drop,.ocr .meter i{transition:none}}
+.support{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 18px;margin:0 0 22px}
+.support .row{margin-top:8px}
+.btn.small{min-height:40px;padding:6px 12px;font-size:.9rem}
+.card.plus{background:var(--lake-soft);border-color:var(--lake)}
+.quota{font-weight:700}
+.codeform .row{flex-wrap:nowrap}
+.codeform input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.04em}
+.paid code{font-size:1.3rem}
+.news{background:var(--moss-soft);border:2px solid var(--moss);border-radius:16px;padding:16px 18px;margin:0 0 22px}
+.news ul{margin:6px 0 0;padding-left:1.2em}
+.dbstatus{margin:0 0 6px;font-variant-numeric:tabular-nums}
+.expert{margin-top:16px;border:2px solid var(--lake);border-radius:16px;padding:16px;background:var(--lake-soft)}
+.expert h3{margin:0 0 6px}
+.expert .chip{display:inline-block;font-weight:800;border-radius:999px;padding:3px 12px;margin-right:6px;color:#fff;background:var(--muted)}
+.expert .chip.scam{background:var(--pulse)}
+.expert .chip.suspicious{background:var(--amber)}
+.expert .chip.safe{background:var(--moss)}
+:root[data-theme="dark"] .expert .chip{color:#0E171F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .expert .chip{color:#0E171F}}
+.consent{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px dashed var(--line)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600;z-index:50}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topbar">
+    <a class="brand" href="./">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4 8 13v17c0 15 10 26 24 30 14-4 24-15 24-30V13L32 4z" fill="#1F4E6B"/><path d="M22 32l7 7 14-15" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span data-i18n="appName">Apsauga</span>
+    </a>
+    <button class="fontbtn" id="fontBtn" type="button" aria-pressed="false"><span aria-hidden="true">A+</span><span class="sr" data-i18n="fontBigger"></span></button>
+    <div class="lang" role="group" aria-label="Kalba / Language" id="lang"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1 data-i18n="tagline">Patikrinkite žinutę, nuorodą ar sąskaitą prieš spausdami ar mokėdami</h1>
+    <span class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="privacy"></span></span>
+  </section>
+
+  <aside class="news" id="news" hidden role="status">
+    <h3 data-i18n="newsTitle"></h3>
+    <ul id="newsList"></ul>
+    <button class="btn ghost" id="newsClose" data-i18n="newsClose"></button>
+  </aside>
+
+  <nav class="tabs" role="tablist" aria-label="Įrankiai">
+    <button class="tab" role="tab" id="t-msg" aria-controls="p-msg" data-tab="msg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span data-i18n="tabMessage"></span></button>
+    <button class="tab" role="tab" id="t-link" aria-controls="p-link" data-tab="link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1"/><path d="M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></svg><span data-i18n="tabLink"></span></button>
+    <button class="tab" role="tab" id="t-iban" aria-controls="p-iban" data-tab="iban">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-5 9 5z"/><path d="M5 10v7M10 10v7M14 10v7M19 10v7M3 20h18"/></svg><span data-i18n="tabIban"></span></button>
+    <button class="tab" role="tab" id="t-prof" aria-controls="p-prof" data-tab="prof">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span data-i18n="tabProfile"></span></button>
+    <button class="tab" role="tab" id="t-prot" aria-controls="p-prot" data-tab="prot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg><span data-i18n="tabProtect"></span></button>
+    <button class="tab help" role="tab" id="t-help" aria-controls="p-help" data-tab="help">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17v.5"/></svg><span data-i18n="tabHelp"></span></button>
+  </nav>
+
+  <!-- Žinutė -->
+  <section class="panel" role="tabpanel" id="p-msg" aria-labelledby="t-msg">
+    <h2 data-i18n="msgTitle"></h2>
+    <p class="hint" data-i18n="msgHint"></p>
+    <div class="drop" id="drop">
+      <div class="row">
+        <label class="btn big" for="shotFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg><span data-i18n="shotBtn"></span></label>
+        <input type="file" id="shotFile" accept="image/*" hidden>
+        <button class="btn big ghost" id="msgPaste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1"/></svg><span data-i18n="pasteCheck"></span></button>
+      </div>
+      <p class="note" data-i18n="dropHint"></p>
+    </div>
+    <div class="ocr" id="ocrStatus" role="status" hidden><div class="meter"><i id="ocrBar"></i></div><span id="ocrText"></span></div>
+    <details class="howto">
+      <summary data-i18n="howTitle"></summary>
+      <ol class="helpsteps" id="howSteps"></ol>
+    </details>
+    <div class="examples"><span data-i18n="examplesLabel"></span><div class="chips" id="msgExamples"></div></div>
+    <textarea id="msg" data-i18n-ph="msgPlaceholder" aria-labelledby="t-msg"></textarea>
+    <label class="lbl" for="sender" data-i18n="senderLabel"></label>
+    <input type="text" id="sender" data-i18n-ph="senderPlaceholder" autocomplete="off">
+    <div class="row">
+      <button class="btn big" id="msgCheck" data-i18n="check"></button>
+      <button class="btn ghost" id="msgClear" data-i18n="clear"></button>
+    </div>
+    <div class="result" id="msgRes" aria-live="polite"></div>
+  </section>
+
+  <!-- Nuoroda -->
+  <section class="panel" role="tabpanel" id="p-link" aria-labelledby="t-link" hidden>
+    <h2 data-i18n="linkTitle"></h2>
+    <p class="hint" data-i18n="linkHint"></p>
+    <div class="examples"><span data-i18n="examplesLabel"></span><div class="chips" id="linkExamples"></div></div>
+    <input type="url" id="link" data-i18n-ph="linkPlaceholder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-labelledby="t-link">
+    <div class="row">
+      <button class="btn big" id="linkPaste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1"/></svg><span data-i18n="pasteCheck"></span></button>
+      <button class="btn big ghost" id="linkCheck" data-i18n="check"></button>
+    </div>
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M21 14v7h-4M14 18v3"/></svg><span data-i18n="linkQr"></span></h3>
+      <p class="note" data-i18n="linkQrHint"></p>
+      <label class="btn" for="qrFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span data-i18n="linkQr"></span></label>
+      <input type="file" id="qrFile" accept="image/*" capture="environment" hidden>
+    </div>
+    <div class="result" id="linkRes" aria-live="polite"></div>
+    <div id="ageBox" hidden>
+      <div class="row"><button class="btn ghost" id="ageBtn" data-i18n="linkAge"></button></div>
+      <p class="note" data-i18n="linkAgeNote"></p>
+      <p id="ageRes" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- IBAN -->
+  <section class="panel" role="tabpanel" id="p-iban" aria-labelledby="t-iban" hidden>
+    <h2 data-i18n="ibanTitle"></h2>
+    <p class="hint" data-i18n="ibanHint"></p>
+    <div class="examples"><span data-i18n="examplesLabel"></span><div class="chips" id="ibanExamples"></div></div>
+    <input type="text" id="iban" data-i18n-ph="ibanPlaceholder" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-labelledby="t-iban">
+    <label class="lbl" for="who" data-i18n="whoLabel"></label>
+    <select id="who">
+      <option value="" data-i18n="whoNone"></option>
+      <option value="bank" data-i18n="whoBank"></option>
+      <option value="police" data-i18n="whoPolice"></option>
+      <option value="gov" data-i18n="whoGov"></option>
+      <option value="courier" data-i18n="whoCourier"></option>
+      <option value="family" data-i18n="whoFamily"></option>
+      <option value="seller" data-i18n="whoSeller"></option>
+      <option value="investment" data-i18n="whoInvestment"></option>
+      <option value="romance" data-i18n="whoRomance"></option>
+      <option value="job" data-i18n="whoJob"></option>
+    </select>
+    <label class="lbl" for="home" data-i18n="homeLabel"></label>
+    <select id="home"></select>
+    <div class="row"><button class="btn big" id="ibanCheck" data-i18n="check"></button></div>
+    <div class="result" id="ibanRes" aria-live="polite"></div>
+  </section>
+
+  <!-- Profilis -->
+  <section class="panel" role="tabpanel" id="p-prof" aria-labelledby="t-prof" hidden>
+    <h2 data-i18n="profTitle"></h2>
+    <p class="hint" data-i18n="profHint"></p>
+    <label class="lbl" for="profName" data-i18n="profName"></label>
+    <input type="text" id="profName" data-i18n-ph="profNamePlaceholder" autocomplete="off">
+    <div class="checks" id="profFlags"></div>
+    <label class="lbl" for="profText" data-i18n="profText"></label>
+    <textarea id="profText" style="min-height:100px"></textarea>
+    <p class="note"><span data-i18n="profLens"></span>
+      <a href="https://lens.google.com/" target="_blank" rel="noopener">Google Lens</a> ·
+      <a href="https://tineye.com/" target="_blank" rel="noopener">TinEye</a> ·
+      <a href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex</a></p>
+    <div class="row"><button class="btn big" id="profCheck" data-i18n="check"></button></div>
+    <div class="result" id="profRes" aria-live="polite"></div>
+  </section>
+
+  <!-- Apsauga -->
+  <section class="panel" role="tabpanel" id="p-prot" aria-labelledby="t-prot" hidden>
+    <h2 data-i18n="protTitle"></h2>
+    <p class="hint" data-i18n="protIntro"></p>
+
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg><span data-i18n="protBuiltinTitle"></span></h3>
+      <ol class="steps" id="builtin"></ol>
+    </div>
+
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c.6-3.5 3-5.5 6-5.5s5.4 2 6 5.5M14 15.5c.9-.6 1.9-1 3-1 2.5 0 4.3 1.8 5 5"/></svg><span data-i18n="protFamilyTitle"></span></h3>
+      <p data-i18n="protFamilyBody"></p>
+    </div>
+
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 10 3 2-3 2M12 15h5"/></svg><span data-i18n="protClickfixTitle"></span></h3>
+      <p data-i18n="protClickfixBody"></p>
+    </div>
+
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M21 14v7h-4M14 18v3"/></svg><span data-i18n="protQrTitle"></span></h3>
+      <p data-i18n="protQrBody"></p>
+    </div>
+
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg><span data-i18n="protDnsTitle"></span></h3>
+      <p data-i18n="protDnsBody"></p>
+      <p><span data-i18n="protDnsAndroid"></span><br><code class="copy" id="dnsHost" title="Copy">dns.quad9.net</code></p>
+      <p data-i18n="protDnsIos"></p>
+    </div>
+
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span data-i18n="protExtTitle"></span></h3>
+      <p data-i18n="protExtBody"></p>
+      <ol class="steps" id="extSteps"></ol>
+      <div class="row"><a class="btn ghost" id="extZip" href="apsauga-extension.zip" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-i18n="extDownload"></span></a></div>
+    </div>
+
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="protPinTitle"></span></h3>
+      <p data-i18n="protPinBody"></p>
+    </div>
+
+    <div class="card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span data-i18n="protRulesTitle"></span></h3>
+      <ol class="golden" id="golden"></ol>
+    </div>
+
+    <div class="card" id="installCard" hidden>
+      <p data-i18n="installHint"></p>
+      <button class="btn" id="installBtn" data-i18n="installApp"></button>
+    </div>
+  </section>
+
+  <!-- Pagalba -->
+  <section class="panel" role="tabpanel" id="p-help" aria-labelledby="t-help" hidden>
+    <h2 data-i18n="helpTitle"></h2>
+    <p class="hint" data-i18n="helpIntro"></p>
+    <a class="btn danger" href="tel:112"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg><span data-i18n="helpCall"></span></a>
+    <ol class="helpsteps" id="helpSteps"></ol>
+    <div class="card" id="reportCard" hidden>
+      <h3 data-i18n="reportTitle"></h3>
+      <p class="note" data-i18n="reportHint"></p>
+      <button class="btn" id="reportBtn" data-i18n="reportBtn"></button>
+    </div>
+  </section>
+
+
+  <section class="support" id="plius" aria-labelledby="supTitle" hidden>
+    <h2 id="supTitle" data-i18n="supTitle"></h2>
+    <p data-i18n="supBody"></p>
+    <div class="row" id="donateLinks"></div>
+    <dl class="kv" id="bankBox" hidden>
+      <dt data-i18n="supName"></dt><dd id="bankName"></dd>
+      <dt>IBAN</dt><dd><span id="bankIban"></span> <button class="btn ghost small" id="bankCopy" type="button" data-i18n="supCopy"></button></dd>
+      <dt data-i18n="supPurpose"></dt><dd id="bankPurpose"></dd>
+    </dl>
+    <p class="note" id="supSafe" data-i18n="supSafe"></p>
+
+    <div class="card plus" id="plusCard" hidden>
+      <h3 data-i18n="plusTitle"></h3>
+      <p data-i18n="plusBody"></p>
+      <p class="quota" id="plusQuota"></p>
+      <div class="paid" id="paidBox" hidden>
+        <p><b data-i18n="plusPaidTitle"></b></p>
+        <code class="copy" id="paidCode"></code>
+        <p class="note" data-i18n="plusPaidSave"></p>
+      </div>
+      <div class="row" id="plusBuy"></div>
+      <form class="codeform" id="codeForm">
+        <label class="lbl" for="codeInput" data-i18n="plusCode"></label>
+        <div class="row">
+          <input type="text" id="codeInput" data-i18n-ph="plusCodePh" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <button class="btn ghost" type="submit" data-i18n="plusActivate"></button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    <p id="dbStatus" class="dbstatus"></p>
+    <span data-i18n="footer"></span> <a href="privatumas.html" data-i18n="privacyLink"></a>
+  </footer>
+</main>
+
+<script src="config.js"></script>
+<script src="extension/shared/i18n.js"></script>
+<script src="extension/shared/detector.js"></script>
+<script src="ocr.js"></script>
+<script src="threatdb.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
