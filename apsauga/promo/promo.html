@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<title>Apsauga – reklaminis video</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* Vertikalus 9:16 kadras 1080×1920. Svarbus turinys tarp y=240 ir y=1560 (socialinių tinklų mygtukų zonos). */
+:root{
+  --navy:#0E171F; --lake:#1F4E6B; --lake-2:#2B6A8F; --sky:#86B9D8; --paper:#EEF3F5; --white:#FFFFFF;
+  --pulse:#C8323C; --pulse-soft:#F7DDDF; --moss:#2F6B40; --moss-soft:#DCEBDF; --amber:#B07A12; --ink:#16202B; --muted:#4A5866;
+  --font:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--navy);font-family:var(--font)}
+.stage{position:absolute;inset:0;overflow:hidden}
+.bg{position:absolute;inset:0}
+.layer{position:absolute;will-change:transform,opacity}
+
+.caption{left:70px;right:70px;top:250px;text-align:center;color:var(--white);font-weight:800;font-size:84px;line-height:1.08;letter-spacing:-.01em;text-wrap:balance}
+.caption .hl{color:#FF8A8F}
+.caption .ok{color:var(--sky)}
+
+/* Telefonas */
+.phone{zoom:1.25;left:162px;top:376px;width:540px;height:900px;border-radius:72px;background:#05090D;padding:22px;box-shadow:0 40px 90px rgba(0,0,0,.45)}
+.screen{position:relative;width:100%;height:100%;border-radius:52px;overflow:hidden;background:#fff}
+.notch{position:absolute;left:50%;top:14px;width:150px;height:34px;margin-left:-75px;border-radius:20px;background:#05090D;z-index:5}
+.sms,.app{position:absolute;inset:0}
+.sms{background:#fff;padding:90px 26px 26px}
+.sms .from{font-size:25px;color:#888;text-align:center;margin-bottom:6px;font-weight:600}
+.sms .when{font-size:20px;color:#aaa;text-align:center;margin-bottom:26px}
+.bubble{background:#E9E9EB;color:#000;border-radius:30px;padding:22px 24px;font-size:29px;line-height:1.32;width:430px}
+.bubble .link{color:#0A84FF;text-decoration:underline;font-weight:600;border-radius:8px;padding:0 4px;margin:0 -4px}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:6}
+
+.app{background:var(--paper);padding:78px 24px 24px}
+.app .bar{display:flex;align-items:center;gap:12px;font-weight:800;font-size:32px;color:var(--ink);margin-bottom:22px}
+.app .bar svg{width:46px;height:46px}
+.app h4{font-size:34px;line-height:1.1;color:var(--ink);margin-bottom:18px}
+.upload{display:flex;align-items:center;justify-content:center;gap:12px;height:86px;border-radius:22px;background:var(--lake);color:#fff;font-weight:800;font-size:27px}
+.upload svg{width:34px;height:34px}
+.progress{margin-top:22px}
+.progress .track{height:16px;border-radius:999px;background:#C6D2DA;overflow:hidden}
+.progress .fill{height:100%;width:0;background:var(--lake);border-radius:999px}
+.progress p{font-size:23px;color:var(--muted);margin-top:10px;font-weight:600}
+.shot{margin-top:22px;border-radius:18px;background:#fff;border:2px dashed #C6D2DA;padding:14px;font-size:20px;color:#333;line-height:1.3}
+
+.result{position:absolute;left:24px;right:24px;top:170px}
+.verdict{display:flex;gap:16px;align-items:flex-start;background:var(--pulse-soft);border:4px solid var(--pulse);border-radius:26px;padding:22px}
+.verdict svg{width:64px;height:64px;flex:none;color:var(--pulse)}
+.verdict b{display:block;font-size:34px;line-height:1.1;color:var(--pulse);font-weight:800}
+.verdict span{font-size:22px;color:var(--ink)}
+.meter{height:14px;border-radius:999px;background:var(--pulse);margin:16px 0 6px}
+.reasons{list-style:none;padding:0;margin-top:14px}
+.reasons li{display:flex;gap:12px;font-size:23px;line-height:1.3;color:var(--ink);padding:12px 0;border-top:1px solid #C6D2DA}
+.reasons li::before{content:"";flex:none;width:16px;height:16px;border-radius:50%;margin-top:7px;background:var(--pulse)}
+.reasons li.safe::before{background:var(--moss)}
+
+/* Pirštas */
+.finger{left:0;top:0;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.35);border:5px solid #fff;z-index:8}
+.stop{width:220px;height:220px;border-radius:50%;border:16px solid var(--pulse);z-index:9}
+.stop::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:240px;margin:-120px 0 0 -8px;background:var(--pulse);transform:rotate(45deg);border-radius:8px}
+
+/* Funkcijos */
+.grid{left:70px;right:70px;top:600px;display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.tile{background:rgba(255,255,255,.08);border:3px solid rgba(134,185,216,.45);border-radius:34px;padding:34px 30px;color:#fff;min-height:250px}
+.tile svg{width:76px;height:76px;color:var(--sky);margin-bottom:18px}
+.tile b{display:block;font-size:40px;line-height:1.12;font-weight:800}
+
+.words{left:70px;right:70px;top:520px;text-align:center;color:#fff}
+.words div{font-size:150px;line-height:1.05;font-weight:800;letter-spacing:-.02em}
+.words div:nth-child(2){color:var(--sky)}
+.words div:nth-child(3){color:#9FE0B0}
+.words p{font-size:44px;line-height:1.3;color:#C9D6DF;margin-top:50px;font-weight:600}
+
+.end{left:70px;right:70px;top:430px;text-align:center;color:#fff}
+.end svg{width:260px;height:260px}
+.end h1{font-size:150px;font-weight:800;letter-spacing:-.02em;margin-top:20px}
+.end p{font-size:52px;line-height:1.2;color:#C9D6DF;font-weight:600;margin-top:10px}
+.cta{display:inline-block;margin-top:70px;background:#fff;color:var(--lake);font-size:50px;font-weight:800;border-radius:999px;padding:34px 60px;line-height:1.15}
+.small{font-size:36px;color:#9FB2BF;margin-top:40px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg" id="bg"></div>
+
+  <div class="layer caption" id="cap1">Gavote tokią žinutę?</div>
+  <div class="layer caption" id="cap2"><span class="hl">Nespauskite</span> nuorodos!</div>
+  <div class="layer caption" id="cap3">Padarykite ekrano nuotrauką…</div>
+  <div class="layer caption" id="cap4">…ir įkelkite į <span class="ok">„Apsaugą“</span></div>
+  <div class="layer caption" id="cap5">Atsakymas per <span class="ok">2 sekundes</span></div>
+  <div class="layer caption" id="cap6">Viskas viename įrankyje</div>
+
+  <div class="layer phone" id="phone">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="sms" id="sms">
+        <div class="from">+370 620 12345</div>
+        <div class="when">Šiandien 14:02</div>
+        <div class="bubble" id="bubble">Regitra: Jūsų transporto priemonei skirta nesumokėta bauda 12,50 EUR. Sumokėkite per 24 val.: <span class="link" id="link">https://regitra-baudos.top/lt</span></div>
+      </div>
+      <div class="app" id="app">
+        <div class="bar"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#1F4E6B"/><path d="M32 9 14 16v13c0 12 7.7 20.5 18 24 10.3-3.5 18-12 18-24V16z" fill="#fff"/><path d="M23.5 31.5l6 6 11.5-12.5" fill="none" stroke="#1F4E6B" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Apsauga</div>
+        <div id="uploadView">
+          <h4>Patikrinkite žinutę</h4>
+          <div class="upload" id="upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>Įkelti ekrano nuotrauką</div>
+          <div class="progress" id="progress"><div class="track"><div class="fill" id="fill"></div></div><p id="ptext">Skaitomas tekstas iš nuotraukos… 0%</p></div>
+          <div class="shot" id="shot">Regitra: Jūsų transporto priemonei skirta nesumokėta bauda 12,50 EUR. Sumokėkite per 24 val.: https://regitra-baudos.top/lt</div>
+        </div>
+        <div class="result" id="result">
+          <div class="verdict"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8l6 6v8l-6 6H8l-6-6V8z"/><path d="M12 7v6M12 16.5v.5"/></svg><div><b>PAVOJINGA – greičiausiai sukčiai</b><span>Nespauskite nuorodos ir nieko nemokėkite.</span></div></div>
+          <div class="meter"></div>
+          <ul class="reasons">
+            <li id="r1">Žinutė apsimeta „Regitra“, bet nuoroda veda į kitą svetainę</li>
+            <li id="r2">Domeno galūnė .top dažnai naudojama sukčių</li>
+            <li id="r3">Skubinama: „per 24 val.“ – sukčiai nori, kad negalvotumėte</li>
+            <li id="r4" class="safe">Nuoroda nebuvo atidaryta – jūs saugūs</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flash" id="flash"></div>
+    </div>
+  </div>
+
+  <div class="layer finger" id="finger"></div>
+  <div class="layer stop" id="stop"></div>
+
+  <div class="layer grid" id="grid">
+    <div class="tile" id="t1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg><b>SMS ir žinutės</b></div>
+    <div class="tile" id="t2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M21 14v7h-4M14 18v3"/></svg><b>Nuorodos ir QR kodai</b></div>
+    <div class="tile" id="t3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 9l9-5 9 5z"/><path d="M5 10v7M10 10v7M14 10v7M19 10v7M3 20h18"/></svg><b>Banko sąskaitos</b></div>
+    <div class="tile" id="t4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><b>Netikros paskyros</b></div>
+    <div class="tile" id="t5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><b>PIN kodo apsauga</b></div>
+    <div class="tile" id="t6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><b>Atnaujinama kas naktį</b></div>
+  </div>
+
+  <div class="layer words" id="words">
+    <div id="w1">Nemokama.</div>
+    <div id="w2">Privatu.</div>
+    <div id="w3">Lietuviškai.</div>
+    <p id="wp">Žinutės tikrinamos jūsų telefone –<br>niekur nesiunčiamos.</p>
+  </div>
+
+  <div class="layer end" id="end">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#2B6A8F"/><path d="M32 9 14 16v13c0 12 7.7 20.5 18 24 10.3-3.5 18-12 18-24V16z" fill="#fff"/><path d="M23.5 31.5l6 6 11.5-12.5" fill="none" stroke="#1F4E6B" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>Apsauga</h1>
+    <p>Patikrinkite prieš spausdami</p>
+    <div class="cta" id="cta">Išbandykite nemokamai<br>nuoroda aprašyme</div>
+    <div class="small" id="small">Pasidalinkite su tėvais ir seneliais</div>
+  </div>
+</div>
+
+<script>
+// Kiekvienas kadras apskaičiuojamas pagal laiką t (sekundės) – vaizdas visada vienodas.
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const easeInOut = (x) => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const back = (x) => { x = clamp(x); const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+// Įėjimas a..a+d, išėjimas b..b+d
+function inOut(t, a, b, d = .35) { return clamp((t - a) / d) * (1 - clamp((t - b) / d)); }
+function set(el, o, tf) { el.style.opacity = o; el.style.transform = tf || ''; }
+const lerp = (a, b, x) => a + (b - a) * x;
+
+window.DURATION = 30;
+window.render = function (t) {
+  // Fonas
+  const warm = clamp((t - 17.2) / .8);
+  $('bg').style.background = `radial-gradient(1200px 1200px at 50% ${lerp(30, 40, warm)}%, ${t > 17 ? '#1F4E6B' : '#17283A'} 0%, #0E171F 70%)`;
+
+  // Antraštės
+  const caps = [['cap1', .5, 3.7], ['cap2', 4.0, 7.3], ['cap3', 7.6, 9.1], ['cap4', 9.3, 11.9], ['cap5', 12.2, 17.0], ['cap6', 17.6, 22.6]];
+  for (const [id, a, b] of caps) {
+    const k = inOut(t, a, b);
+    set($(id), k, `translateY(${(1 - easeOut(clamp((t - a) / .35))) * 40}px)`);
+  }
+
+  // Telefonas: įvažiuoja, 17,2 s išvažiuoja į kairę
+  const pin = easeOut((t - .1) / .7), pout = easeInOut((t - 17.0) / .7);
+  set($('phone'), clamp((t - .1) / .4) * (1 - pout), `translate(${-pout * 900}px, ${(1 - pin) * 260}px) scale(${lerp(.92, 1, pin)})`);
+
+  // SMS burbulas
+  set($('bubble'), clamp((t - .6) / .3), `translateY(${(1 - back((t - .6) / .5)) * 50}px) scale(${lerp(.9, 1, back((t - .6) / .5))})`);
+  // Nuoroda mirksi raudonai (4–7 s)
+  const pulse = t > 4 && t < 7.4 ? (Math.sin((t - 4) * 9) + 1) / 2 : 0;
+  $('link').style.background = `rgba(200,50,60,${pulse * .35})`;
+  $('link').style.color = pulse > .02 ? '#C8323C' : '#0A84FF';
+
+  // Pirštas artėja prie nuorodos ir sustabdomas
+  // Nuorodos vieta ekrane (telefonas tuo metu jau nejuda)
+  const lr = $('link').getBoundingClientRect();
+  const fx = lr.left + Math.min(lr.width, 300) * .5, fy = lr.top + lr.height / 2;
+  const fIn = easeInOut((t - 4.3) / 1.1), fBack = easeInOut((t - 6.0) / .7);
+  const fo = clamp((t - 4.3) / .3) * (1 - clamp((t - 6.4) / .3));
+  set($('finger'), fo, `translate(${lerp(820, fx - 55, fIn) + fBack * 260}px, ${lerp(1700, fy - 55, fIn) + fBack * 330}px)`);
+  const s = back((t - 5.35) / .4);
+  set($('stop'), clamp((t - 5.35) / .15) * (1 - clamp((t - 7.0) / .3)), `translate(${fx - 110}px, ${fy - 110}px) scale(${lerp(.3, 1, s)})`);
+
+  // Ekrano nuotraukos blyksnis ir programėlė
+  $('flash').style.opacity = t > 8.0 && t < 8.6 ? 1 - (t - 8.0) / .6 : 0;
+  const appK = clamp((t - 8.9) / .4);
+  set($('sms'), 1 - appK, `translateX(${-appK * 120}px)`);
+  set($('app'), appK, `translateX(${(1 - appK) * 160}px)`);
+  // Mygtuko paspaudimas
+  const press = t > 9.6 && t < 9.9 ? .94 : 1;
+  $('upload').style.transform = `scale(${press})`;
+  const pk = clamp((t - 9.9) / 1.6);
+  $('fill').style.width = (easeInOut(pk) * 100).toFixed(1) + '%';
+  $('ptext').textContent = 'Skaitomas tekstas iš nuotraukos… ' + Math.round(easeInOut(pk) * 100) + '%';
+  set($('progress'), clamp((t - 9.8) / .2));
+  set($('shot'), clamp((t - 10.1) / .4), `translateY(${(1 - easeOut((t - 10.1) / .5)) * 30}px)`);
+  // Rezultatas
+  const rk = clamp((t - 12.0) / .3);
+  set($('uploadView'), 1 - rk);
+  set($('result'), rk, `scale(${lerp(.85, 1, back((t - 12.0) / .5))})`);
+  [['r1', 13.0], ['r2', 13.7], ['r3', 14.4], ['r4', 15.3]].forEach(([id, a]) =>
+    set($(id), clamp((t - a) / .3), `translateX(${(1 - easeOut((t - a) / .4)) * 60}px)`));
+
+  // Funkcijų plytelės
+  const gOut = clamp((t - 22.6) / .4);
+  ['t1', 't2', 't3', 't4', 't5', 't6'].forEach((id, i) => {
+    const a = 17.9 + i * .45;
+    set($(id), clamp((t - a) / .25) * (1 - gOut), `translateY(${(1 - back((t - a) / .5)) * 80 - gOut * 60}px) scale(${lerp(.85, 1, back((t - a) / .5))})`);
+  });
+  $('grid').style.opacity = t > 17.5 && t < 23.2 ? 1 : 0;
+
+  // Trys žodžiai
+  const wOut = clamp((t - 25.9) / .35);
+  [['w1', 23.2], ['w2', 23.8], ['w3', 24.4], ['wp', 25.0]].forEach(([id, a]) =>
+    set($(id), clamp((t - a) / .25) * (1 - wOut), `translateY(${(1 - easeOut((t - a) / .4)) * 60}px)`));
+  $('words').style.opacity = t > 23 && t < 26.4 ? 1 : 0;
+
+  // Pabaiga
+  const e = clamp((t - 26.3) / .4);
+  set($('end'), e, `scale(${lerp(.9, 1, back((t - 26.3) / .6))})`);
+  set($('cta'), clamp((t - 27.0) / .3), `scale(${t > 27 ? 1 + Math.max(0, Math.sin((t - 27.3) * 4)) * .03 : .9})`);
+  set($('small'), clamp((t - 27.8) / .4));
+};
+window.render(0);
+</script>
+</body>
+</html>

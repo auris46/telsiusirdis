@@ -7,7 +7,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 OUT=${1:-$ROOT/dist/site}
 rm -rf "$OUT"
 mkdir -p "$OUT"
-(cd "$ROOT" && tar cf - --exclude=./tests --exclude=./tools --exclude=./dist .) | (cd "$OUT" && tar xf -)
+(cd "$ROOT" && tar cf - --exclude=./tests --exclude=./tools --exclude=./dist --exclude=./promo .) | (cd "$OUT" && tar xf -)
 find "$OUT" -maxdepth 1 -name '*.md' -delete
 sh "$ROOT/tools/package-extension.sh" "$OUT" >/dev/null
 # Kasdien atnaujinama sukčių svetainių bazė (praleisti: SKIP_DB=1)
